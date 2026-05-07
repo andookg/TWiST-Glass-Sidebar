@@ -1,8 +1,40 @@
-# TWiST Glass Sidebar
+<div align="center">
 
-Open-source live podcast sidebar with OpenAI Realtime transcription, four AI persona cards, two-stream recording, project memory, clip suggestions, and agent handoffs.
+<img src="TWiST-social-banner.png" alt="TWiST Glass Sidebar" width="100%" />
 
-The app listens to a podcast/show through tab audio, microphone, or both, builds a rolling transcript, and renders a glass-style AI writer's room beside the regular stream.
+<h1>TWiST Glass Sidebar</h1>
+<p><strong>Real-time AI companion for live podcasts</strong></p>
+
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
+[![OpenAI Realtime](https://img.shields.io/badge/OpenAI-Realtime-412991?logo=openai)](https://platform.openai.com)
+[![Remotion](https://img.shields.io/badge/Remotion-Clips-blue)](https://remotion.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://typescriptlang.org)
+[![Open Source](https://img.shields.io/badge/open%20source-100%25-brightgreen?logo=github)](https://github.com/andookg/TWiST-Glass-Sidebar)
+
+<br/>
+
+[![Watch the Demo](https://img.shields.io/badge/▶%20Watch%20Demo-YouTube-red?style=for-the-badge&logo=youtube)](https://youtu.be/KMeLNxoGffg)
+
+</div>
+
+---
+
+## What it does
+
+TWiST Glass Sidebar listens to your browser audio in real time and routes every word to **five specialized AI minds** — all displayed live in a glass-morphism interface designed for broadcast.
+
+| Persona | Role |
+|---|---|
+| ✅ **Fact Checker** | Catches errors before you make them |
+| 😄 **Comedy Writer** | Drops one-liners on-air |
+| 📰 **News Update** | Scans what's breaking right now |
+| 🎵 **Sound Context** | Suggests cues, clips & lower thirds |
+| 🧐 **Cynical Commentary** | Keeps everything sharp and honest |
+
+When the show is done — one click exports your best moments to video via **Remotion**.
+
+---
 
 ## Quick Start
 
@@ -13,118 +45,92 @@ npm install
 npm run activate
 ```
 
-Open `http://127.0.0.1:3000`.
+Open `http://127.0.0.1:3000` and add your API key in the **Setup** panel — or set it in `.env.local`:
 
-Add an API key in either place:
+```bash
+OPENAI_API_KEY=sk-...
+```
 
-- Open **Setup** in the app, paste a key, press Enter.
-- Or set `OPENAI_API_KEY` in `.env.local`.
+---
 
-The app stores local UI-pasted keys in `.data/runtime-secrets.json`, which is gitignored.
+## Features
 
-## What It Does
+- 🎙️ **Browser Audio Capture** — Tab, Mic, or Both, simultaneously
+- ⚡ **OpenAI Realtime Transcription** — WebRTC streaming, ultra-low latency
+- 🧠 **5 AI Persona Workers** — Parallel, independent, persona-scoped
+- 🔀 **Model Router** — OpenAI · OpenRouter · Custom Gateway
+- ✂️ **Clip Studio** — AI-detected moments + Remotion MP4 handoff
+- 🤖 **Agent Ready** — Full `/api/agent/brief` endpoint for home base agent integration
+- 📦 **Project Memory** — Persistent context across sessions
+- 🗂️ **Memory Stash** — Attach files (code, docs, notes) as AI context
+- 💾 **Storage Adapters** — Local JSONL · Webhook · Custom API · Supabase
+- 🔒 **Security First** — Keys server-side only, never exposed to client
 
-- Captures `Tab`, `Mic`, or `Both` audio sources.
-- Uses OpenAI Realtime transcription with `gpt-realtime-whisper`.
-- Exposes Realtime voice sessions with `gpt-realtime-2`.
-- Exposes Realtime translation sessions with `gpt-realtime-translate`.
-- Routes transcript windows to four AI personas:
-  - Fact-checker
-  - Comedy Writer
-  - News Update
-  - Cynical Commentary
-- Supports OpenAI Responses, OpenRouter, or a custom OpenAI-compatible gateway for persona cards.
-- Includes Prompt Studio, Project Memory, Memory Stash, secure storage adapters, Clip Studio, and Remotion handoff manifests.
-- Records the regular show stream or the enhanced sidebar stream as local WebM files with browser MediaRecorder.
-- Exposes `/api/agent/brief` so outside agents can understand and operate the project.
+---
 
 ## Agent Activation
 
-Agents should read [AGENTS.md](./AGENTS.md) and [docs/AGENT_ACTIVATION.md](./docs/AGENT_ACTIVATION.md).
-
-Once the app is running:
+The entire system is ready to activate with your own home base agent. Once running:
 
 ```bash
 curl http://127.0.0.1:3000/api/agent/brief?projectId=default
 curl "http://127.0.0.1:3000/api/agent/brief?projectId=default&format=md"
 ```
 
+See [AGENTS.md](./AGENTS.md) and [docs/AGENT_ACTIVATION.md](./docs/AGENT_ACTIVATION.md).
+
+---
+
+## Customize Everything
+
+Once you download it, you can add, change, and make it your own:
+
+- **Models** — swap OpenAI for any OpenAI-compatible provider
+- **Personas** — edit prompts, add new roles, change behaviors
+- **Storage** — local file, Supabase, or your own webhook
+- **UI** — full Next.js 15 + React codebase, modular hook architecture
+
+---
+
 ## Commands
 
 ```bash
-npm run setup       # create .env.local and .data if needed
-npm run activate    # setup and start local dev server
+npm run setup       # create .env.local and .data/
+npm run activate    # setup + start dev server
 npm run dev:local   # start on 127.0.0.1:3000
-npm run doctor      # repo and secret-safety checks
-npm run typecheck   # TypeScript
+npm run doctor      # safety + secret checks
+npm run typecheck   # TypeScript check
 npm run build       # production build
 npm run verify      # typecheck + build
 ```
 
-## Environment
+---
+
+## Environment Variables
 
 ```bash
+# Required
 OPENAI_API_KEY=
+
+# Optional – model overrides
 OPENAI_TRANSCRIBE_MODEL=gpt-realtime-whisper
 OPENAI_PERSONA_MODEL=gpt-4o
 OPENAI_REALTIME_MODEL=gpt-realtime-2
-OPENAI_REALTIME_TRANSLATE_MODEL=gpt-realtime-translate
-OPENAI_REALTIME_VOICE=marin
-PERSONA_PROVIDER=openai
-```
 
-Optional providers:
-
-```bash
+# Optional – alternate providers
 OPENROUTER_API_KEY=
-OPENROUTER_MODEL=openrouter/auto
-AI_GATEWAY_BASE_URL=https://your-gateway.example.com
+AI_GATEWAY_BASE_URL=
 AI_GATEWAY_API_KEY=
-AI_GATEWAY_MODEL=your/provider-model
-```
 
-Optional storage:
-
-```bash
-DATA_STORAGE_PROVIDER=none
-DATA_STORAGE_LOCAL_PATH=.data/sidebar-events.jsonl
-DATA_STORAGE_WEBHOOK_URL=https://your-webhook.example.com/events
-DATA_STORAGE_CUSTOM_URL=https://your-api.example.com/events
-SUPABASE_URL=https://your-project.supabase.co
+# Optional – storage
+DATA_STORAGE_PROVIDER=none        # local | webhook | custom | supabase
+SUPABASE_URL=
 SUPABASE_TABLE=twist_sidebar_events
 ```
 
-See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
+---
 
-## API
-
-See [docs/API.md](./docs/API.md).
-
-Key routes:
-
-- `POST /api/realtime/session`
-- `POST /api/realtime/voice-session`
-- `POST /api/realtime/translate-session`
-- `POST /api/personas/analyze`
-- `POST /api/clips/suggest`
-- `GET /api/agent/brief`
-- `GET|POST /api/memory/stash`
-- `GET|POST /api/agent/clip-handoff`
-
-## Capture Tips
-
-- **Tab**: best for YouTube/podcast playback. Choose the show tab and enable tab audio.
-- **Mic**: best for local voice testing.
-- **Both**: mixes show tab audio and microphone into one Realtime stream.
-- **Sample**: demos the UI without an API key.
-- **Record Show**: saves the current captured show stream.
-- **Record Enhanced**: asks you to share the app view and saves the sidebar-enhanced stream.
-
-Do not share the sidebar tab into itself unless you are intentionally testing screen capture.
-
-## Remotion Clips
-
-`remotion-clips/` contains a Remotion template created with `npx create-video@latest`.
+## Remotion Clip Studio
 
 ```bash
 cd remotion-clips
@@ -133,30 +139,51 @@ npm run dev
 npx remotion render src/index.ts ClipSuggestion out/sample.mp4 --props src/sample-props.json
 ```
 
+---
+
 ## Security
 
-Read [SECURITY.md](./SECURITY.md).
+- API keys **never** leave your server
+- No data stored without your explicit permission
+- `.data/`, `.env*`, and `node_modules/` are gitignored by default
 
-Never commit:
+Read [SECURITY.md](./SECURITY.md) before deploying.
 
-- `.data/`
-- `.env.local`
-- `.env`
-- API keys
-- Realtime client secrets
-- generated videos
-- `node_modules/`
+---
 
-## Open Source Release
+## API Routes
 
-Read [docs/OPEN_SOURCE_RELEASE.md](./docs/OPEN_SOURCE_RELEASE.md).
+| Route | Method | Description |
+|---|---|---|
+| `/api/realtime/session` | POST | Transcription session token |
+| `/api/realtime/voice-session` | POST | Voice agent session |
+| `/api/realtime/translate-session` | POST | Translation session |
+| `/api/personas/analyze` | POST | Run persona analysis |
+| `/api/clips/suggest` | POST | Clip suggestion |
+| `/api/agent/brief` | GET | Machine-readable project manifest |
+| `/api/memory/stash` | GET/POST | Memory stash operations |
+| `/api/agent/clip-handoff` | GET/POST | Remotion clip handoff |
 
-```bash
-npm run doctor
-npm run verify
-git status --short
+---
+
+## Architecture
+
 ```
+app/
+├── hooks/          # 10 modular custom hooks (audio, transcription, personas, etc.)
+├── components/     # Shared UI components (ErrorBoundary, PersonaAvatar, etc.)
+├── utils/          # Format utilities
+├── api/            # Server-side API routes
+└── page.tsx        # Thin orchestrator component
+
+remotion-clips/     # Remotion clip rendering template
+promo-video/        # Promo video source (Remotion)
+```
+
+---
 
 ## License
 
-MIT. See [LICENSE](./LICENSE).
+MIT — see [LICENSE](./LICENSE).
+
+Built with ❤️ for the podcast community.
