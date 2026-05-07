@@ -913,7 +913,7 @@ export default function Home() {
       await activateCapture(activeMode);
     } catch (error) {
       const captureError = normalizeCaptureError(error, activeMode);
-      const canFallbackToMic = activeMode !== "mic";
+      const canFallbackToMic = !overrideMode && activeMode === "both";
 
       if (canFallbackToMic) {
         try {
@@ -947,6 +947,14 @@ export default function Home() {
   const stopCapture = () => {
     stopRecording();
     stopEverything("stopped");
+  };
+
+  const chooseCaptureMode = (mode: CaptureMode) => {
+    setCaptureMode(mode);
+    if (status === "error" || errorMessage) {
+      setErrorMessage("");
+      setCaptureErrorKind(null);
+    }
   };
 
   // Auto-recover when the user grants mic permission in System Settings
@@ -1661,7 +1669,7 @@ export default function Home() {
         <div className="segmented-control" aria-label="Capture source">
           <button
             className={captureMode === "tab" ? "active" : ""}
-            onClick={() => setCaptureMode("tab")}
+            onClick={() => chooseCaptureMode("tab")}
             title="Capture tab or system audio"
           >
             <MonitorUp size={17} />
@@ -1669,7 +1677,7 @@ export default function Home() {
           </button>
           <button
             className={captureMode === "mic" ? "active" : ""}
-            onClick={() => setCaptureMode("mic")}
+            onClick={() => chooseCaptureMode("mic")}
             title="Capture microphone audio"
           >
             <Mic size={17} />
@@ -1677,7 +1685,7 @@ export default function Home() {
           </button>
           <button
             className={captureMode === "both" ? "active" : ""}
-            onClick={() => setCaptureMode("both")}
+            onClick={() => chooseCaptureMode("both")}
             title="Capture show tab audio and microphone together"
           >
             <Waves size={17} />
@@ -1794,8 +1802,10 @@ export default function Home() {
                 <button
                   className="mini-button"
                   onClick={() => {
-                    window.location.href =
-                      "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone";
+                    window.open(
+                      "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone",
+                      "_blank"
+                    );
                   }}
                   type="button"
                   title="Opens macOS Privacy & Security → Microphone"
@@ -1828,7 +1838,15 @@ export default function Home() {
                   <span>{captureMode === "mic" ? "Use Tab" : "Use Mic"}</span>
                 </button>
               ) : null}
-              <button className="mini-button" onClick={addSampleTranscript} type="button">
+              <button
+                className="mini-button"
+                onClick={() => {
+                  setCaptureErrorKind(null);
+                  setErrorMessage("");
+                  addSampleTranscript();
+                }}
+                type="button"
+              >
                 <Sparkles size={15} />
                 <span>Just show me a sample</span>
               </button>
