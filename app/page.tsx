@@ -8,6 +8,7 @@ import {
   CircleStop,
   Clapperboard,
   Cloud,
+  Cog,
   Database,
   Eraser,
   Eye,
@@ -204,10 +205,10 @@ function normalizeCaptureError(error: unknown, mode: CaptureMode): CaptureErrorC
       kind: "permission",
       message:
         mode === "mic"
-          ? "Microphone permission is blocked for this browser/site. macOS can be allowed while the local page still needs a fresh browser permission grant."
+          ? "Microphone access is paused. A one-time browser okay is all we need."
           : mode === "both"
-            ? "Dual capture was blocked. The app needs permission for the show tab first, then the microphone."
-          : "Tab capture was blocked. Press Start again and choose a browser tab with audio enabled."
+            ? "Both mode needs the show tab first, then the microphone — quick okay each."
+          : "Tab capture was canceled. Press Start and pick a browser tab with audio enabled."
     };
   }
 
@@ -946,6 +947,42 @@ export default function Home() {
     stopEverything("stopped");
   };
 
+  // Auto-recover when the user grants mic permission in System Settings
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.permissions) {
+      return;
+    }
+    if (captureErrorKind !== "permission" || captureMode !== "mic") {
+      return;
+    }
+
+    const controller = new AbortController();
+    let permissionStatus: PermissionStatus | null = null;
+
+    navigator.permissions
+      .query({ name: "microphone" as PermissionName })
+      .then((status) => {
+        if (controller.signal.aborted) return;
+        permissionStatus = status;
+        const handler = () => {
+          if (status.state === "granted") {
+            setErrorMessage("");
+            setCaptureErrorKind(null);
+            void startCapture();
+          }
+        };
+        status.addEventListener("change", handler, { signal: controller.signal });
+      })
+      .catch(() => {
+        // Permissions API unsupported in this browser — silently skip auto-recovery.
+      });
+
+    return () => {
+      controller.abort();
+      permissionStatus = null;
+    };
+  }, [captureErrorKind, captureMode]);
+
   const clearTranscript = () => {
     setTranscriptTurns([]);
     setPersonaCards([]);
@@ -1487,8 +1524,24 @@ export default function Home() {
           <div className="brand-mark">
             <Radio size={22} />
           </div>
-          <div>
-            <h1>TWiST Glass Sidebar</h1>
+          <div className="brand-text">
+            <div className="brand-title-row">
+              <h1>TWiST Glass Sidebar</h1>
+              {status === "listening" ? (
+                <span
+                  className="live-pill"
+                  role="status"
+                  aria-live="polite"
+                  title={`Live capture · ${activePersonaIds.length} agents online · recording`}
+                >
+                  <span className="live-dot" aria-hidden="true" />
+                  <span>Live</span>
+                  <span className="live-detail">
+                    {activePersonaIds.length} agents · recording
+                  </span>
+                </span>
+              ) : null}
+            </div>
             <p>{STATUS_COPY[status]} live intelligence layer</p>
           </div>
         </div>
@@ -1695,31 +1748,64 @@ export default function Home() {
       ) : null}
 
       {errorMessage ? (
-        <div className={`error-banner ${captureErrorKind ? "capture-error" : ""}`}>
+        <div
+          className={`error-banner${captureErrorKind ? " capture-error" : ""}${captureErrorKind === "permission" ? " permission-banner" : ""}`}
+        >
           <Info size={18} />
           <div>
             <strong>
               {captureErrorKind === "permission"
-                ? "Browser permission needs one more step"
+                ? "Almost there — one quick okay"
                 : captureErrorKind === "no-audio"
-                  ? "Audio was not shared"
+                  ? "Audio wasn't shared from that tab"
                   : captureErrorKind === "unsupported"
-                    ? "Capture device unavailable"
-                    : "Needs attention"}
+                    ? "This browser can't reach that capture device"
+                    : "Almost there"}
             </strong>
             <span>{errorMessage}</span>
             {captureErrorKind ? (
               <small>
                 {captureMode === "mic"
-                  ? "Try Retry Mic after reloading, or open this localhost URL in Chrome/Safari and allow the site microphone prompt. For podcast demos, Tab audio is usually smoother."
+                  ? "Easiest path for podcasts: switch to Tab audio — no system permission needed. Or grant mic access in System Settings and try again."
                   : captureMode === "both"
-                    ? "Both needs a full browser tab picker. In Codex/in-app browsers, switch to Mic or Sample; for the bounty demo, open this URL in Chrome/Brave/Safari and share the show tab with audio."
-                  : "Choose Chrome/Brave/Safari tab capture, then check Share tab audio in the browser picker."}
+                    ? "Both mode needs a real browser tab picker. Try Mic alone, or open this URL in Chrome/Brave/Safari to share the show tab."
+                  : "Pick a Chrome/Brave/Safari tab and tick Share tab audio in the picker."}
               </small>
             ) : null}
           </div>
           {captureErrorKind ? (
             <div className="error-actions">
+              {captureErrorKind === "permission" && captureMode === "mic" ? (
+                <button
+                  className="mini-button"
+                  onClick={() => {
+                    setCaptureMode("tab");
+                    setErrorMessage("");
+                    setCaptureErrorKind(null);
+                  }}
+                  type="button"
+                  title="Recommended: capture the podcast tab directly, no permission grant needed"
+                >
+                  <MonitorUp size={15} />
+                  <span>Use Tab audio</span>
+                </button>
+              ) : null}
+              {captureErrorKind === "permission" &&
+              typeof navigator !== "undefined" &&
+              navigator.userAgent.includes("Mac") ? (
+                <button
+                  className="mini-button"
+                  onClick={() => {
+                    window.location.href =
+                      "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone";
+                  }}
+                  type="button"
+                  title="Opens macOS Privacy & Security → Microphone"
+                >
+                  <Cog size={15} />
+                  <span>Open System Settings</span>
+                </button>
+              ) : null}
               <button
                 className="mini-button"
                 onClick={() => void startCapture()}
@@ -1727,24 +1813,30 @@ export default function Home() {
               >
                 <RotateCcw size={15} />
                 <span>
-                  {captureMode === "mic" ? "Retry Mic" : captureMode === "both" ? "Retry Both" : "Retry Tab"}
+                  {captureMode === "mic"
+                    ? "Try Mic again"
+                    : captureMode === "both"
+                      ? "Try Both again"
+                      : "Try Tab again"}
                 </span>
               </button>
-              <button
-                className="mini-button"
-                onClick={() => {
-                  setCaptureMode(captureMode === "mic" ? "tab" : "mic");
-                  setErrorMessage("");
-                  setCaptureErrorKind(null);
-                }}
-                type="button"
-              >
-                {captureMode === "mic" ? <MonitorUp size={15} /> : <Mic size={15} />}
-                <span>{captureMode === "mic" ? "Use Tab" : "Use Mic"}</span>
-              </button>
+              {!(captureErrorKind === "permission" && captureMode === "mic") ? (
+                <button
+                  className="mini-button"
+                  onClick={() => {
+                    setCaptureMode(captureMode === "mic" ? "tab" : "mic");
+                    setErrorMessage("");
+                    setCaptureErrorKind(null);
+                  }}
+                  type="button"
+                >
+                  {captureMode === "mic" ? <MonitorUp size={15} /> : <Mic size={15} />}
+                  <span>{captureMode === "mic" ? "Use Tab" : "Use Mic"}</span>
+                </button>
+              ) : null}
               <button className="mini-button" onClick={addSampleTranscript} type="button">
                 <Sparkles size={15} />
-                <span>Sample</span>
+                <span>Just show me a sample</span>
               </button>
             </div>
           ) : null}

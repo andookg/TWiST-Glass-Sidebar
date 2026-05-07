@@ -17,7 +17,7 @@ export const STATUS_COPY: Record<RuntimeStatus, string> = {
   listening: "Listening",
   reconnecting: "Reconnecting",
   stopped: "Stopped",
-  error: "Needs attention",
+  error: "Almost there",
 };
 
 export function useAudioCapture() {
