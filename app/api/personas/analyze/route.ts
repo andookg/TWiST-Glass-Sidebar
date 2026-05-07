@@ -181,7 +181,55 @@ async function runPersonaModel(
     };
   }
 
+  if (modelRoute.mode === "messages") {
+    return runAnthropicModel(modelRoute, input);
+  }
+
   return runChatCompatibleModel(modelRoute, input);
+}
+
+async function runAnthropicModel(
+  modelRoute: ResolvedModelRoute,
+  input: {
+    transcriptWindow: string;
+    activePersonas: PersonaId[];
+    promptStudio: PromptStudioConfig;
+    projectMemory: ProjectMemoryConfig;
+    showMetadata: Record<string, unknown>;
+  }
+) {
+  const response = await fetch(modelRoute.endpoint, {
+    method: "POST",
+    headers: {
+      "x-api-key": modelRoute.apiKey,
+      "Content-Type": "application/json",
+      ...modelRoute.headers
+    },
+    body: JSON.stringify({
+      model: modelRoute.model,
+      max_tokens: 1400,
+      system: buildSystemPrompt(
+        input.activePersonas,
+        input.promptStudio,
+        input.projectMemory
+      ),
+      messages: [{ role: "user", content: JSON.stringify(input) }],
+      tools: [
+        {
+          name: "emit_persona_cards",
+          description:
+            "Return the persona sidebar cards array shaped exactly as the schema requires.",
+          input_schema: RESPONSE_SCHEMA
+        }
+      ],
+      tool_choice: { type: "tool", name: "emit_persona_cards" }
+    })
+  });
+
+  return {
+    response,
+    payload: await response.json().catch(() => null)
+  };
 }
 
 async function runChatCompatibleModel(
@@ -470,6 +518,11 @@ Rules:
 }
 
 function parseCards(payload: unknown): unknown[] {
+  const fromAnthropic = extractAnthropicCards(payload);
+  if (fromAnthropic.length > 0) {
+    return fromAnthropic;
+  }
+
   const text = extractOutputText(payload);
   if (!text) {
     return [];
@@ -482,6 +535,28 @@ function parseCards(payload: unknown): unknown[] {
 
   if (parsed && typeof parsed === "object" && Array.isArray((parsed as { cards?: unknown }).cards)) {
     return (parsed as { cards: unknown[] }).cards;
+  }
+
+  return [];
+}
+
+function extractAnthropicCards(payload: unknown): unknown[] {
+  if (!payload || typeof payload !== "object") return [];
+  const content = (payload as { content?: unknown }).content;
+  if (!Array.isArray(content)) return [];
+
+  for (const block of content) {
+    if (!block || typeof block !== "object") continue;
+    const type = (block as { type?: unknown }).type;
+    if (type !== "tool_use") continue;
+    const blockInput = (block as { input?: unknown }).input;
+    if (
+      blockInput &&
+      typeof blockInput === "object" &&
+      Array.isArray((blockInput as { cards?: unknown }).cards)
+    ) {
+      return (blockInput as { cards: unknown[] }).cards;
+    }
   }
 
   return [];

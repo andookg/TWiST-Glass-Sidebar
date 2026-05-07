@@ -7,7 +7,7 @@ import { OPENAI_REALTIME_DEFAULTS } from "@/lib/realtime-models";
 const LEGACY_OPENAI_PERSONA_MODEL = ["gpt", "5.5"].join("-");
 const SECRET_KEY_PREFIX = ["s", "k"].join("") + "-";
 
-export type RuntimeProviderId = "openai" | "openrouter" | "custom";
+export type RuntimeProviderId = "openai" | "anthropic" | "openrouter" | "custom";
 
 export type RuntimeSecrets = {
   version: 1;
@@ -18,6 +18,10 @@ export type RuntimeSecrets = {
     transcribeModel?: string;
     realtimeModel?: string;
     translationModel?: string;
+  };
+  anthropic?: {
+    apiKey?: string;
+    model?: string;
   };
   openrouter?: {
     apiKey?: string;
@@ -107,6 +111,18 @@ export async function saveRuntimeProviderConfig(input: RuntimeConfigInput) {
         };
   }
 
+  if (provider === "anthropic") {
+    next.anthropic = input.clear
+      ? {
+          model: clean(input.model) || current.anthropic?.model
+        }
+      : {
+          ...current.anthropic,
+          apiKey: cleanSecret(input.apiKey) || current.anthropic?.apiKey,
+          model: clean(input.model) || current.anthropic?.model
+        };
+  }
+
   if (provider === "openrouter") {
     next.openrouter = input.clear
       ? {
@@ -144,6 +160,8 @@ export function getRuntimeConfigStatus(
 ): RuntimeConfigStatus {
   const openaiRuntimeKey = cleanSecret(secrets.openai?.apiKey);
   const openaiEnvKey = cleanSecret(process.env.OPENAI_API_KEY);
+  const anthropicRuntimeKey = cleanSecret(secrets.anthropic?.apiKey);
+  const anthropicEnvKey = cleanSecret(process.env.ANTHROPIC_API_KEY);
   const openrouterRuntimeKey = cleanSecret(secrets.openrouter?.apiKey);
   const openrouterEnvKey = cleanSecret(process.env.OPENROUTER_API_KEY);
   const customRuntimeKey = cleanSecret(secrets.custom?.apiKey);
@@ -153,7 +171,7 @@ export function getRuntimeConfigStatus(
 
   return {
     keySetupEnabled: process.env.BROWSER_KEY_SETUP_DISABLED !== "true",
-    filePath: ".data/runtime-secrets.json",
+    filePath: runtimeSecretsPath(),
     providers: {
       openai: {
         configured: Boolean(openaiRuntimeKey || openaiEnvKey),
@@ -177,6 +195,17 @@ export function getRuntimeConfigStatus(
           secrets.openai?.translationModel ||
           process.env.OPENAI_REALTIME_TRANSLATE_MODEL ||
           OPENAI_REALTIME_DEFAULTS.translationModel
+      },
+      anthropic: {
+        configured: Boolean(anthropicRuntimeKey || anthropicEnvKey),
+        keyConfigured: Boolean(anthropicRuntimeKey || anthropicEnvKey),
+        source: sourceFor(anthropicRuntimeKey, anthropicEnvKey),
+        redacted: redactSecret(anthropicRuntimeKey || anthropicEnvKey),
+        model:
+          secrets.anthropic?.model ||
+          process.env.ANTHROPIC_PERSONA_MODEL ||
+          "claude-sonnet-4-6",
+        endpoint: "https://api.anthropic.com/v1/messages"
       },
       openrouter: {
         configured: Boolean(openrouterRuntimeKey || openrouterEnvKey),
@@ -226,7 +255,12 @@ export function getRuntimeOpenAIConfig() {
 }
 
 export function isRuntimeProviderId(value?: string): value is RuntimeProviderId {
-  return value === "openai" || value === "openrouter" || value === "custom";
+  return (
+    value === "openai" ||
+    value === "anthropic" ||
+    value === "openrouter" ||
+    value === "custom"
+  );
 }
 
 export function pickRuntimeProvider(value?: string): RuntimeProviderId {
@@ -244,6 +278,12 @@ function normalizeRuntimeSecrets(value: RuntimeSecrets): RuntimeSecrets {
           transcribeModel: clean(value.openai.transcribeModel),
           realtimeModel: clean(value.openai.realtimeModel),
           translationModel: clean(value.openai.translationModel)
+        }
+      : undefined,
+    anthropic: value.anthropic
+      ? {
+          apiKey: cleanSecret(value.anthropic.apiKey),
+          model: clean(value.anthropic.model)
         }
       : undefined,
     openrouter: value.openrouter

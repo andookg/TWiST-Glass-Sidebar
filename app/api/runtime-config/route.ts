@@ -31,7 +31,10 @@ export async function POST(request: Request) {
 
   if (body.provider !== undefined && !isRuntimeProviderId(body.provider)) {
     return NextResponse.json(
-      { error: "Unknown provider. Use 'openai', 'openrouter', or 'custom'." },
+      {
+        error:
+          "Unknown provider. Use 'openai', 'anthropic', 'openrouter', or 'custom'."
+      },
       { status: 400 }
     );
   }

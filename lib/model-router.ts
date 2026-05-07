@@ -1,6 +1,6 @@
 import { cleanSecret, normalizeOpenAIModel, readRuntimeSecretsSync } from "@/lib/runtime-config";
 
-export type ModelProviderId = "openai" | "openrouter" | "custom";
+export type ModelProviderId = "openai" | "anthropic" | "openrouter" | "custom";
 
 export type ModelRouterSelection = {
   provider?: string;
@@ -13,7 +13,7 @@ export type ModelRouteSummary = {
   configured: boolean;
   model: string;
   endpoint: string;
-  mode: "responses" | "chat";
+  mode: "responses" | "chat" | "messages";
   accent: string;
   capabilities: string[];
 };
@@ -32,6 +32,13 @@ const PROVIDERS: Array<Pick<ModelRouteSummary, "id" | "label" | "mode" | "accent
     capabilities: ["Realtime sibling", "web search", "schema cards"]
   },
   {
+    id: "anthropic",
+    label: "Anthropic Claude",
+    mode: "messages",
+    accent: "#d97757",
+    capabilities: ["Claude 4 family", "tool-use schema", "long context"]
+  },
+  {
     id: "openrouter",
     label: "OpenRouter",
     mode: "chat",
@@ -40,10 +47,10 @@ const PROVIDERS: Array<Pick<ModelRouteSummary, "id" | "label" | "mode" | "accent
   },
   {
     id: "custom",
-    label: "Custom Gateway",
+    label: "Local / Custom Gateway",
     mode: "chat",
     accent: "#edbd76",
-    capabilities: ["OpenAI-compatible", "self-hostable", "model override"]
+    capabilities: ["Ollama, LM Studio, vLLM", "OpenAI-compatible", "self-hostable"]
   }
 ];
 
@@ -69,6 +76,26 @@ export function resolveModelRoute(
   const runtimeSecrets = readRuntimeSecretsSync();
   const providerId = pickProvider(selection.provider);
   const provider = PROVIDERS.find((candidate) => candidate.id === providerId) ?? PROVIDERS[0];
+
+  if (providerId === "anthropic") {
+    const apiKey =
+      cleanSecret(runtimeSecrets.anthropic?.apiKey) ||
+      cleanSecret(process.env.ANTHROPIC_API_KEY);
+    return {
+      ...provider,
+      configured: Boolean(apiKey),
+      apiKey,
+      model:
+        clean(selection.model) ||
+        runtimeSecrets.anthropic?.model ||
+        process.env.ANTHROPIC_PERSONA_MODEL ||
+        "claude-sonnet-4-6",
+      endpoint: "https://api.anthropic.com/v1/messages",
+      headers: {
+        "anthropic-version": "2023-06-01"
+      }
+    };
+  }
 
   if (providerId === "openrouter") {
     const apiKey =
@@ -156,6 +183,13 @@ function pickProvider(requested?: string): ModelProviderId {
   }
 
   if (
+    cleanSecret(runtimeSecrets.anthropic?.apiKey) ||
+    cleanSecret(process.env.ANTHROPIC_API_KEY)
+  ) {
+    return "anthropic";
+  }
+
+  if (
     cleanSecret(runtimeSecrets.openrouter?.apiKey) ||
     cleanSecret(process.env.OPENROUTER_API_KEY)
   ) {
@@ -177,7 +211,12 @@ function pickProvider(requested?: string): ModelProviderId {
 }
 
 function isProviderId(value?: string): value is ModelProviderId {
-  return value === "openai" || value === "openrouter" || value === "custom";
+  return (
+    value === "openai" ||
+    value === "anthropic" ||
+    value === "openrouter" ||
+    value === "custom"
+  );
 }
 
 function clean(value?: string) {

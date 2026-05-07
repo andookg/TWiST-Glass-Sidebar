@@ -85,6 +85,12 @@ async function requestMacMediaPermissions() {
   }
 }
 
+function configureDesktopDataPaths() {
+  const userDataPath = app.getPath("userData");
+  process.env.RUNTIME_SECRETS_PATH ||= path.join(userDataPath, "runtime-secrets.json");
+  process.env.DATA_STORAGE_LOCAL_PATH ||= path.join(userDataPath, "sidebar-events.jsonl");
+}
+
 function wireCapturePermissions() {
   const allowedOrigins = new Set([APP_ORIGIN, APP_ORIGIN.replace("127.0.0.1", "localhost")]);
   const capturePermissions = new Set([
@@ -127,6 +133,7 @@ function safeOrigin(value) {
 }
 
 async function createWindow() {
+  configureDesktopDataPaths();
   await startNextServer();
   await requestMacMediaPermissions();
   wireCapturePermissions();
