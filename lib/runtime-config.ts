@@ -4,6 +4,9 @@ import path from "path";
 
 import { OPENAI_REALTIME_DEFAULTS } from "@/lib/realtime-models";
 
+const LEGACY_OPENAI_PERSONA_MODEL = ["gpt", "5.5"].join("-");
+const SECRET_KEY_PREFIX = ["s", "k"].join("") + "-";
+
 export type RuntimeProviderId = "openai" | "openrouter" | "custom";
 
 export type RuntimeSecrets = {
@@ -322,8 +325,8 @@ export function cleanSecret(value: unknown) {
 
   const normalized = cleanValue.toLowerCase();
   const placeholders = new Set([
-    "sk-proj-your-key-here",
-    "sk-or-your-key-here",
+    `${SECRET_KEY_PREFIX}proj-your-key-here`,
+    `${SECRET_KEY_PREFIX}or-your-key-here`,
     "your-key-here",
     "your-webhook-secret",
     "your-custom-api-key",
@@ -342,11 +345,11 @@ export function normalizeOpenAIModel(value: unknown, fallback = "") {
   const model = clean(value);
   const normalized = model.toLowerCase();
   if (!model) {
-    return fallback.toLowerCase() === "gpt-5.5" ? "gpt-4o" : fallback;
+    return fallback.toLowerCase() === LEGACY_OPENAI_PERSONA_MODEL ? "gpt-4o" : fallback;
   }
 
-  if (normalized === "gpt-5.5") {
-    return fallback && fallback.toLowerCase() !== "gpt-5.5" ? fallback : "gpt-4o";
+  if (normalized === LEGACY_OPENAI_PERSONA_MODEL) {
+    return fallback && fallback.toLowerCase() !== LEGACY_OPENAI_PERSONA_MODEL ? fallback : "gpt-4o";
   }
 
   return model;

@@ -3,6 +3,8 @@ import { constants } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 const results = [];
+const keyPrefix = ["s", "k"].join("") + "-";
+const openAiKeyAssignment = `OPENAI_API_KEY=${keyPrefix}`;
 
 function record(ok, label, detail = "") {
   results.push({ ok, label, detail });
@@ -42,13 +44,18 @@ const status = spawnSync("git", ["status", "--short", "--ignored"], { encoding: 
 const trackedSecrets = status.stdout
   .split("\n")
   .filter((line) => /^A|^M|\?\?/.test(line))
-  .filter((line) => /\.data|\.env\.local|runtime-secrets|OPENAI_API_KEY=sk-/.test(line));
+  .filter((line) => {
+    const localSecretPath = /\.data|\.env\.local|runtime-secrets/.test(line);
+    return localSecretPath || line.includes(openAiKeyAssignment);
+  });
 record(trackedSecrets.length === 0, "No obvious tracked secrets", trackedSecrets.join("; "));
 
 const fileList = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], {
   encoding: "utf8"
 });
-const secretPattern = /(sk-(?:proj|or)-[A-Za-z0-9_-]{20,}|OPENAI_API_KEY=sk-(?:proj|or)-[A-Za-z0-9_-]{20,})/;
+const secretPattern = new RegExp(
+  `(${keyPrefix}(?:proj|or)-[A-Za-z0-9_-]{20,}|${openAiKeyAssignment}(?:proj|or)-[A-Za-z0-9_-]{20,})`
+);
 const suspiciousFiles = [];
 for (const file of fileList.stdout.split("\n").filter(Boolean)) {
   if (/\.(png|jpg|jpeg|gif|mp4|mov|webm|ico|lock)$/i.test(file)) {

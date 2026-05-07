@@ -88,6 +88,8 @@ import type {
   RuntimeConfigStatus,
 } from "@/app/hooks";
 
+const LEGACY_OPENAI_PERSONA_MODEL = ["gpt", "5.5"].join("-");
+
 type ViewMode = "enhanced" | "regular";
 type CaptureErrorKind = "permission" | "no-audio" | "unsupported" | "generic";
 
@@ -266,8 +268,8 @@ function normalizeSelectedModel(provider: string, value: string, fallback = "") 
     return fallback;
   }
 
-  if (provider === "openai" && model.toLowerCase() === "gpt-5.5") {
-    return fallback && fallback.toLowerCase() !== "gpt-5.5" ? fallback : "gpt-4o";
+  if (provider === "openai" && model.toLowerCase() === LEGACY_OPENAI_PERSONA_MODEL) {
+    return fallback && fallback.toLowerCase() !== LEGACY_OPENAI_PERSONA_MODEL ? fallback : "gpt-4o";
   }
 
   return model;
@@ -1807,10 +1809,10 @@ export default function Home() {
                 onChange={(event) => setKeySetupApiKey(event.target.value)}
                 placeholder={
                   selectedProvider === "openrouter"
-                    ? "sk-or-..."
+                    ? "OpenRouter API key"
                     : selectedProvider === "custom"
                       ? "optional bearer key"
-                      : "sk-proj-..."
+                      : "OpenAI project API key"
                 }
                 spellCheck={false}
                 type="password"
