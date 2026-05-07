@@ -77,6 +77,13 @@ async function requestMacMediaPermissions() {
 
   await systemPreferences.askForMediaAccess("microphone").catch(() => false);
 
+  const micStatus = systemPreferences.getMediaAccessStatus("microphone");
+  if (micStatus === "denied" || micStatus === "restricted") {
+    await shell.openExternal(
+      "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+    );
+  }
+
   const screenStatus = systemPreferences.getMediaAccessStatus("screen");
   if (screenStatus === "denied" || screenStatus === "restricted") {
     await shell.openExternal(
