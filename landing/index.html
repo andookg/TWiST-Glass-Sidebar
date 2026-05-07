@@ -175,10 +175,17 @@ footer{border-top:1px solid var(--border);padding:40px 48px;background:var(--sur
 
 <!-- VIDEO -->
 <section class="video-section">
-  <div class="video-wrap">
-    <iframe src="https://www.youtube.com/embed/KMeLNxoGffg" allowfullscreen
-      allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"></iframe>
-  </div>
+  <a href="https://youtu.be/KMeLNxoGffg" target="_blank" class="video-wrap" style="display:block;text-decoration:none;position:relative;cursor:pointer;">
+    <img src="../TWiST-thumbnail.png" alt="Watch TWiST Glass Sidebar Demo" style="width:100%;height:100%;object-fit:cover;display:block;"/>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);transition:.2s;" onmouseover="this.style.background='rgba(0,0,0,.5)'" onmouseout="this.style.background='rgba(0,0,0,.35)'">
+      <div style="width:80px;height:80px;border-radius:50%;background:rgba(0,112,243,.9);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(0,112,243,.5);">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+    </div>
+    <div style="position:absolute;bottom:20px;left:24px;background:rgba(0,0,0,.7);color:#fff;font-size:14px;font-weight:600;padding:8px 16px;border-radius:20px;backdrop-filter:blur(8px);">
+      ▶ Watch the full demo on YouTube
+    </div>
+  </a>
 </section>
 
 <!-- PERSONAS -->
