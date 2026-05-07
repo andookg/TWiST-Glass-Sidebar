@@ -11,10 +11,12 @@
 [![Remotion](https://img.shields.io/badge/Remotion-Clips-blue)](https://remotion.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://typescriptlang.org)
 [![Open Source](https://img.shields.io/badge/open%20source-100%25-brightgreen?logo=github)](https://github.com/andookg/TWiST-Glass-Sidebar)
+[![Live Site](https://img.shields.io/badge/🌐%20Live%20Site-twistglasssidebar.netlify.app-brightgreen)](https://twistglasssidebar.netlify.app)
 
 <br/>
 
 [![Watch the Demo](https://img.shields.io/badge/▶%20Watch%20Demo-YouTube-red?style=for-the-badge&logo=youtube)](https://youtu.be/KMeLNxoGffg)
+[![Live Site](https://img.shields.io/badge/🌐%20Live%20Site-Visit-brightgreen?style=for-the-badge)](https://twistglasssidebar.netlify.app)
 
 </div>
 
