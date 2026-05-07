@@ -101,14 +101,13 @@ export async function POST(request: Request) {
   });
 
   if (!response.ok) {
-    return NextResponse.json(
-      {
-        error: "Persona analysis failed.",
-        details: payload,
-        modelRouter: publicRoute(modelRoute)
-      },
-      { status: response.status }
-    );
+    return NextResponse.json({
+      cards: createFallbackCards(transcriptWindow, activePersonas),
+      mode: "fallback",
+      fallbackReason: providerFallbackReason(response.status),
+      details: payload,
+      modelRouter: publicRoute(modelRoute)
+    });
   }
 
   const cards = normalizeCards(parseCards(payload), activePersonas);
@@ -297,6 +296,22 @@ function publicRoute(modelRoute: ResolvedModelRoute & { configured: boolean }) {
 
 function authHeader(apiKey: string): Record<string, string> {
   return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+}
+
+function providerFallbackReason(status: number) {
+  if (status === 401 || status === 403) {
+    return "Provider key was rejected, so demo cards were generated locally.";
+  }
+
+  if (status === 404) {
+    return "Provider model or endpoint was unavailable, so demo cards were generated locally.";
+  }
+
+  if (status === 429) {
+    return "Provider rate limit was reached, so demo cards were generated locally.";
+  }
+
+  return "Provider request failed, so demo cards were generated locally.";
 }
 
 function normalizePersonas(personas?: PersonaId[]) {

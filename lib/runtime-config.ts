@@ -85,7 +85,9 @@ export async function saveRuntimeProviderConfig(input: RuntimeConfigInput) {
   if (provider === "openai") {
     next.openai = input.clear
       ? {
-          personaModel: clean(input.model) || current.openai?.personaModel,
+          personaModel:
+            normalizeOpenAIModel(input.model, current.openai?.personaModel) ||
+            current.openai?.personaModel,
           transcribeModel: clean(input.transcribeModel) || current.openai?.transcribeModel,
           realtimeModel: clean(input.realtimeModel) || current.openai?.realtimeModel,
           translationModel: clean(input.translationModel) || current.openai?.translationModel
@@ -93,7 +95,9 @@ export async function saveRuntimeProviderConfig(input: RuntimeConfigInput) {
       : {
           ...current.openai,
           apiKey: cleanSecret(input.apiKey) || current.openai?.apiKey,
-          personaModel: clean(input.model) || current.openai?.personaModel,
+          personaModel:
+            normalizeOpenAIModel(input.model, current.openai?.personaModel) ||
+            current.openai?.personaModel,
           transcribeModel: clean(input.transcribeModel) || current.openai?.transcribeModel,
           realtimeModel: clean(input.realtimeModel) || current.openai?.realtimeModel,
           translationModel: clean(input.translationModel) || current.openai?.translationModel
@@ -153,7 +157,10 @@ export function getRuntimeConfigStatus(
         keyConfigured: Boolean(openaiRuntimeKey || openaiEnvKey),
         source: sourceFor(openaiRuntimeKey, openaiEnvKey),
         redacted: redactSecret(openaiRuntimeKey || openaiEnvKey),
-        model: secrets.openai?.personaModel || process.env.OPENAI_PERSONA_MODEL || "gpt-4o",
+        model: normalizeOpenAIModel(
+          secrets.openai?.personaModel || process.env.OPENAI_PERSONA_MODEL,
+          "gpt-4o"
+        ),
         endpoint: "https://api.openai.com/v1/responses",
         transcribeModel:
           secrets.openai?.transcribeModel ||
@@ -230,7 +237,7 @@ function normalizeRuntimeSecrets(value: RuntimeSecrets): RuntimeSecrets {
     openai: value.openai
       ? {
           apiKey: cleanSecret(value.openai.apiKey),
-          personaModel: clean(value.openai.personaModel),
+          personaModel: normalizeOpenAIModel(value.openai.personaModel),
           transcribeModel: clean(value.openai.transcribeModel),
           realtimeModel: clean(value.openai.realtimeModel),
           translationModel: clean(value.openai.translationModel)
@@ -329,4 +336,18 @@ export function cleanSecret(value: unknown) {
   }
 
   return cleanValue;
+}
+
+export function normalizeOpenAIModel(value: unknown, fallback = "") {
+  const model = clean(value);
+  const normalized = model.toLowerCase();
+  if (!model) {
+    return fallback.toLowerCase() === "gpt-5.5" ? "gpt-4o" : fallback;
+  }
+
+  if (normalized === "gpt-5.5") {
+    return fallback && fallback.toLowerCase() !== "gpt-5.5" ? fallback : "gpt-4o";
+  }
+
+  return model;
 }

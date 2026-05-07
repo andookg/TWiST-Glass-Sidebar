@@ -107,6 +107,13 @@ type CaptureStreamResult = {
 };
 
 function getTabCaptureStream() {
+  if (!navigator.mediaDevices?.getDisplayMedia) {
+    throw new DOMException(
+      "Screen or tab capture is not available in this browser.",
+      "NotFoundError"
+    );
+  }
+
   return navigator.mediaDevices.getDisplayMedia({
     video: true,
     audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
@@ -208,7 +215,7 @@ function normalizeCaptureError(error: unknown, mode: CaptureMode): CaptureErrorC
       message:
         mode === "mic"
           ? "No microphone device is available to this browser."
-          : "This browser could not find a capturable tab or screen."
+          : "This browser cannot expose tab or screen capture here. Open http://127.0.0.1:3000 in Chrome, Brave, or Safari for tab audio, or use Mic/Sample in this browser."
     };
   }
 
@@ -251,6 +258,19 @@ function mergeProjectMemory(value: unknown): ProjectMemoryState {
     autosaveCards: typeof raw.autosaveCards === "boolean" ? raw.autosaveCards : defaults.autosaveCards,
     autosaveTranscript: typeof raw.autosaveTranscript === "boolean" ? raw.autosaveTranscript : defaults.autosaveTranscript,
   };
+}
+
+function normalizeSelectedModel(provider: string, value: string, fallback = "") {
+  const model = value.trim();
+  if (!model) {
+    return fallback;
+  }
+
+  if (provider === "openai" && model.toLowerCase() === "gpt-5.5") {
+    return fallback && fallback.toLowerCase() !== "gpt-5.5" ? fallback : "gpt-4o";
+  }
+
+  return model;
 }
 
 const TEXT_MEMORY_EXTENSIONS = new Set([
@@ -426,7 +446,11 @@ export default function Home() {
     );
   }, [modelRoutes, selectedProvider]);
 
-  const activeModel = modelOverride.trim() || selectedRoute.model;
+  const activeModel = normalizeSelectedModel(
+    selectedProvider,
+    modelOverride.trim() || selectedRoute.model,
+    selectedRoute.model
+  );
   const selectedRuntimeProvider = runtimeConfigStatus?.providers[selectedProvider];
 
   const agentFlowState = useMemo(() => {
@@ -626,10 +650,18 @@ export default function Home() {
           "openai";
         const nextRoute = providers.find((provider) => provider.id === nextProvider);
         const savedModel = window.localStorage.getItem(`twist-sidebar-model-${nextProvider}`);
+        const normalizedModel = normalizeSelectedModel(
+          nextProvider,
+          savedModel || "",
+          nextRoute?.model || ""
+        );
+        if (savedModel && normalizedModel !== savedModel) {
+          window.localStorage.setItem(`twist-sidebar-model-${nextProvider}`, normalizedModel);
+        }
 
         setModelRoutes(providers);
         setSelectedProvider(nextProvider);
-        setModelOverride(savedModel || nextRoute?.model || "");
+        setModelOverride(normalizedModel || nextRoute?.model || "");
       })
       .catch(() => {
         setModelRoutes([]);
@@ -642,8 +674,9 @@ export default function Home() {
 
   useEffect(() => {
     window.localStorage.setItem("twist-sidebar-provider", selectedProvider);
-    if (modelOverride.trim()) {
-      window.localStorage.setItem(`twist-sidebar-model-${selectedProvider}`, modelOverride.trim());
+    const normalizedModel = normalizeSelectedModel(selectedProvider, modelOverride, "");
+    if (normalizedModel) {
+      window.localStorage.setItem(`twist-sidebar-model-${selectedProvider}`, normalizedModel);
     }
   }, [modelOverride, selectedProvider]);
 
@@ -1573,8 +1606,8 @@ export default function Home() {
                 {captureMode === "mic"
                   ? "Try Retry Mic after reloading, or open this localhost URL in Chrome/Safari and allow the site microphone prompt. For podcast demos, Tab audio is usually smoother."
                   : captureMode === "both"
-                    ? "Press Retry Both, pick the show tab with Share tab audio, then allow the microphone prompt. Do not share the sidebar tab itself unless it is your test source."
-                  : "Choose Chrome tab capture, then check Share tab audio in the browser picker."}
+                    ? "Both needs a full browser tab picker. In Codex/in-app browsers, switch to Mic or Sample; for the bounty demo, open this URL in Chrome/Brave/Safari and share the show tab with audio."
+                  : "Choose Chrome/Brave/Safari tab capture, then check Share tab audio in the browser picker."}
               </small>
             ) : null}
           </div>

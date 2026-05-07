@@ -1,4 +1,4 @@
-import { cleanSecret, readRuntimeSecretsSync } from "@/lib/runtime-config";
+import { cleanSecret, normalizeOpenAIModel, readRuntimeSecretsSync } from "@/lib/runtime-config";
 
 export type ModelProviderId = "openai" | "openrouter" | "custom";
 
@@ -125,10 +125,12 @@ export function resolveModelRoute(
     configured: Boolean(apiKey),
     apiKey,
     model:
-      clean(selection.model) ||
-      runtimeSecrets.openai?.personaModel ||
-      process.env.OPENAI_PERSONA_MODEL ||
-      "gpt-4o",
+      normalizeOpenAIModel(
+        clean(selection.model) ||
+          runtimeSecrets.openai?.personaModel ||
+          process.env.OPENAI_PERSONA_MODEL,
+        "gpt-4o"
+      ),
     endpoint: "https://api.openai.com/v1/responses",
     headers: {}
   };
