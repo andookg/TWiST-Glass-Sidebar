@@ -816,9 +816,9 @@ export default function Home() {
     setErrorMessage("");
     setCaptureErrorKind(null);
 
-    try {
+    const activateCapture = async (mode: CaptureMode) => {
       stopEverything("connecting");
-      const capture = await getCaptureStream(captureMode);
+      const capture = await getCaptureStream(mode);
       const stream = capture.stream;
       const audioTrack = stream.getAudioTracks()[0];
 
@@ -841,8 +841,37 @@ export default function Home() {
       startMeter(stream);
       await connectRealtime(stream);
       setStatus("listening");
+    };
+
+    try {
+      await activateCapture(captureMode);
     } catch (error) {
       const captureError = normalizeCaptureError(error, captureMode);
+      const canFallbackToMic = captureMode !== "mic";
+
+      if (canFallbackToMic) {
+        try {
+          setCaptureMode("mic");
+          await activateCapture("mic");
+          return;
+        } catch (micError) {
+          const micCaptureError = normalizeCaptureError(micError, "mic");
+          if (micCaptureError.kind === "unsupported") {
+            setCaptureMode("mic");
+            stopEverything("stopped");
+            setCaptureErrorKind(null);
+            setErrorMessage("");
+            addSampleTranscript();
+            return;
+          }
+
+          stopEverything("error");
+          setCaptureErrorKind(micCaptureError.kind);
+          setErrorMessage(micCaptureError.message);
+          return;
+        }
+      }
+
       stopEverything("error");
       setCaptureErrorKind(captureError.kind);
       setErrorMessage(captureError.message);
