@@ -13,6 +13,7 @@ export const PROJECT_CONTEXT = {
     "Project Memory for each downloaded instance",
     "local memory stash for attaching files and folders as agent-readable context",
     "clip suggestions with Remotion render props",
+    "MediaRecorder controls for saving the regular show stream or enhanced sidebar stream as WebM",
     "agent handoff manifests for external bots and render workers",
     "secure server-side storage adapters for local files, webhooks, custom APIs, or Supabase"
   ],

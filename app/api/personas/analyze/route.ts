@@ -24,7 +24,7 @@ const RESPONSE_SCHEMA = {
     cards: {
       type: "array",
       minItems: 0,
-      maxItems: 5,
+      maxItems: 4,
       items: {
         type: "object",
         additionalProperties: false,

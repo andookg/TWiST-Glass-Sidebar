@@ -44,6 +44,12 @@ export function useStreamRecorder() {
 
   const beginRecording = useCallback(
     (stream: MediaStream, kind: Exclude<RecordingKind, null>, ownsStream: boolean) => {
+      if (recorderRef.current && recorderRef.current.state !== "inactive") {
+        setError("Stop the current recording before starting another one.");
+        if (ownsStream) stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
       const mimeType = pickMimeType();
       if (!mimeType) {
         setError("This browser does not support MediaRecorder webm output.");
@@ -88,6 +94,7 @@ export function useStreamRecorder() {
 
   const startShow = useCallback(
     (stream: MediaStream | null) => {
+      setError("");
       if (!stream || stream.getTracks().length === 0) {
         setError("Press Start to capture a show stream first, then record.");
         return;
@@ -98,6 +105,7 @@ export function useStreamRecorder() {
   );
 
   const startEnhanced = useCallback(async () => {
+    setError("");
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,

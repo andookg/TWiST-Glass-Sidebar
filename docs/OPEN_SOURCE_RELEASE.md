@@ -43,4 +43,4 @@ git push -u origin main
 
 ## Suggested Repo Description
 
-Open-source live podcast sidebar with OpenAI Realtime transcription, AI persona cards, project memory, and agent handoffs.
+Open-source live podcast sidebar with OpenAI Realtime transcription, four AI persona cards, two-stream recording, project memory, and agent handoffs.

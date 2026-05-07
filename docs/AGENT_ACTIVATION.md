@@ -62,3 +62,10 @@ It includes:
 - memory stash summaries
 - clip and Remotion schemas
 - bot handoff actions
+
+## Bounty Demo Checks
+
+- Press **Start** with `Tab`, `Mic`, or `Both` selected to create the live transcription stream.
+- Press **Record Show** after capture starts to save the regular stream.
+- Press **Record Enhanced** and select the app tab/window to save the sidebar-enhanced stream.
+- Use **Sample** without a key to prove the four-persona UI path.

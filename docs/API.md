@@ -40,6 +40,15 @@ All routes are Next.js route handlers under `app/api`.
 - `POST /api/agent/clip-handoff`
   - Converts clip suggestions into render actions.
 
+## Browser-Only Recording
+
+- **Record Show**
+  - Uses `MediaRecorder` on the active captured show stream.
+  - Downloads a local `show-stream-*.webm` file when stopped.
+- **Record Enhanced**
+  - Uses browser screen capture so the user can select the enhanced sidebar view.
+  - Downloads a local `enhanced-stream-*.webm` file when stopped.
+
 ## Runtime and Storage
 
 - `GET /api/model-router`

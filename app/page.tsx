@@ -60,6 +60,7 @@ import {
   useMemoryStash,
   useStorageSync,
   useClipStudio,
+  useStreamRecorder,
   STATUS_COPY,
   PROMPT_PRESETS,
   buildPublicProjectMemory,
@@ -368,6 +369,14 @@ export default function Home() {
   const [memoryAttachments, setMemoryAttachments] = useState<MemoryAttachment[]>([]);
   const [memoryStashMessage, setMemoryStashMessage] = useState("");
   const [memoryStashLoading, setMemoryStashLoading] = useState(false);
+  const {
+    recordingKind,
+    error: recordingError,
+    startShow: startShowRecording,
+    startEnhanced: startEnhancedRecording,
+    stop: stopRecording,
+    isRecording
+  } = useStreamRecorder();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileStashInputRef = useRef<HTMLInputElement | null>(null);
@@ -806,6 +815,7 @@ export default function Home() {
   };
 
   const stopCapture = () => {
+    stopRecording();
     stopEverything("stopped");
   };
 
@@ -1317,6 +1327,12 @@ export default function Home() {
   const isRunning =
     status === "connecting" || status === "listening" || status === "reconnecting";
   const hasVideo = Boolean(streamRef.current?.getVideoTracks().length);
+  const recordingLabel =
+    recordingKind === "show"
+      ? "regular"
+      : recordingKind === "enhanced"
+        ? "enhanced"
+        : "";
 
   return (
     <main
@@ -1490,7 +1506,53 @@ export default function Home() {
           <Sparkles size={17} />
           <span>Sample</span>
         </button>
+
+        <div className={`recording-controls ${isRecording ? "recording" : ""}`}>
+          {isRecording ? (
+            <button
+              className="mini-button record-stop"
+              onClick={stopRecording}
+              title={`Stop ${recordingLabel} stream recording and download the WebM file`}
+              type="button"
+            >
+              <CircleStop size={15} />
+              <span>Stop {recordingLabel}</span>
+            </button>
+          ) : (
+            <>
+              <button
+                className="mini-button"
+                disabled={!isRunning || !streamRef.current}
+                onClick={() => startShowRecording(streamRef.current)}
+                title="Record the captured regular show stream"
+                type="button"
+              >
+                <Clapperboard size={15} />
+                <span>Record Show</span>
+              </button>
+              <button
+                className="mini-button"
+                onClick={() => void startEnhancedRecording()}
+                title="Record the enhanced sidebar view through browser screen capture"
+                type="button"
+              >
+                <PanelRightOpen size={15} />
+                <span>Record Enhanced</span>
+              </button>
+            </>
+          )}
+        </div>
       </section>
+
+      {recordingError ? (
+        <div className="recording-banner">
+          <Info size={18} />
+          <div>
+            <strong>Recording needs attention</strong>
+            <span>{recordingError}</span>
+          </div>
+        </div>
+      ) : null}
 
       {errorMessage ? (
         <div className={`error-banner ${captureErrorKind ? "capture-error" : ""}`}>
@@ -1594,6 +1656,7 @@ export default function Home() {
           <span>{selectedRoute.configured ? "Live model" : "Demo fallback"}</span>
           <span>{storageStatus.configured ? `${storageStatus.provider} storage` : "local memory"}</span>
           <span>{clipSuggestions.length ? `${clipSuggestions.length} clips queued` : "clip scout ready"}</span>
+          <span>{isRecording ? `recording ${recordingLabel} stream` : "two-stream recorder"}</span>
           <span>{simpleMode ? "simple core" : glassFlowMode ? "glass flow" : "classic glass"}</span>
         </div>
       </section>

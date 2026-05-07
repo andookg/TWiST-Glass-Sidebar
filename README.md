@@ -35,6 +35,7 @@ The app stores local UI-pasted keys in `.data/runtime-secrets.json`, which is gi
   - Cynical Commentary
 - Supports OpenAI Responses, OpenRouter, or a custom OpenAI-compatible gateway for persona cards.
 - Includes Prompt Studio, Project Memory, Memory Stash, secure storage adapters, Clip Studio, and Remotion handoff manifests.
+- Records the regular show stream or the enhanced sidebar stream as local WebM files with browser MediaRecorder.
 - Exposes `/api/agent/brief` so outside agents can understand and operate the project.
 
 ## Agent Activation
@@ -116,6 +117,8 @@ Key routes:
 - **Mic**: best for local voice testing.
 - **Both**: mixes show tab audio and microphone into one Realtime stream.
 - **Sample**: demos the UI without an API key.
+- **Record Show**: saves the current captured show stream.
+- **Record Enhanced**: asks you to share the app view and saves the sidebar-enhanced stream.
 
 Do not share the sidebar tab into itself unless you are intentionally testing screen capture.
 

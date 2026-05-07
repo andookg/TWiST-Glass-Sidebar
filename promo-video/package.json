@@ -24,6 +24,7 @@
   "scripts": {
     "dev": "remotion studio",
     "build": "remotion bundle",
+    "voiceover": "node scripts/generate-tts.js",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc"
   },

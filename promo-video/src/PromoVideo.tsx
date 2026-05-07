@@ -43,8 +43,10 @@ export const PromoVideo: React.FC = () => (
     <Sequence from={660} durationInFrames={180}><SceneUI /></Sequence>
     {/* S6: Clip Studio (28-32s) */}
     <Sequence from={840} durationInFrames={120}><SceneClipStudio /></Sequence>
-    {/* S7: Outro (32-36.5s) */}
-    <Sequence from={960} durationInFrames={135}><SceneOutro /></Sequence>
+    {/* S7: Agent + Security (32-44s) */}
+    <Sequence from={960} durationInFrames={360}><SceneAgentSecurity /></Sequence>
+    {/* S8: Outro (44-65s) */}
+    <Sequence from={1320} durationInFrames={633}><SceneOutro /></Sequence>
   </AbsoluteFill>
 );
 
@@ -162,7 +164,7 @@ const PIPELINE = [
   { label: "Browser Audio",   sub: "Tab + Mic",          color: T.green,  icon: "🎙️" },
   { label: "OpenAI Realtime", sub: "WebRTC streaming",   color: T.accent, icon: "⚡" },
   { label: "Model Router",    sub: "OpenAI · OpenRouter", color: T.purple, icon: "⚙️" },
-  { label: "5 AI Personas",   sub: "Parallel workers",   color: T.amber,  icon: "🧠" },
+  { label: "4 AI Personas",   sub: "Parallel workers",   color: T.amber,  icon: "🧠" },
   { label: "Glass Cards",     sub: "Live on screen",     color: T.white,  icon: "✨" },
 ];
 
@@ -232,7 +234,6 @@ const PERSONAS = [
   { name: "Fact Checker",       role: "Catches errors before you make them",      color: T.green,  emoji: "✅", tag: "VERIFY" },
   { name: "Comedy Writer",      role: "Drops one-liners straight to the feed",     color: T.amber,  emoji: "😄", tag: "COMEDY" },
   { name: "News Update",        role: "Scans what's breaking right now",           color: T.accent, emoji: "📰", tag: "LIVE NEWS" },
-  { name: "Sound Context",      role: "Suggests cues, clips & lower thirds",       color: T.purple, emoji: "🎵", tag: "PRODUCTION" },
   { name: "Cynical Commentary", role: "Keeps the conversation sharp & honest",     color: T.red,    emoji: "🧐", tag: "SHARP" },
 ];
 
@@ -247,7 +248,7 @@ const ScenePersonas: React.FC = () => {
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 56, opacity }}>
       <div style={{ transform: `translateY(${interpolate(titleY, [0,1], [40,0])}px)`, textAlign: "center" }}>
-        <div style={{ fontSize: 52, fontWeight: 700, color: T.white }}>5 AI Minds. One Sidebar.</div>
+        <div style={{ fontSize: 52, fontWeight: 700, color: T.white }}>4 AI Minds. One Sidebar.</div>
         <div style={{ fontSize: 24, color: T.muted, marginTop: 12 }}>Parallel workers. Zero latency. Pure signal.</div>
       </div>
       <div style={{ display: "flex", gap: 28 }}>
@@ -427,8 +428,75 @@ const SceneClipStudio: React.FC = () => {
   );
 };
 
-// ─── Scene 7: Outro ────────────────────────────────────────────────────────
+// ─── Scene 7: Agent + Security ────────────────────────────────────────────
+const FEATURES = [
+  { icon: "🤖", label: "Home Base Agent", sub: "Plug in your own agent — it's API-ready", color: T.accent },
+  { icon: "⚙️",  label: "Fully Customizable", sub: "Models, personas, prompts, storage & UI", color: T.purple },
+  { icon: "🔒", label: "Security First",     sub: "Keys server-side. Zero data without consent", color: T.green },
+  { icon: "📦", label: "100% Open Source",   sub: "Fork it. Own it. Change everything.",        color: T.amber },
+];
+
+const SceneAgentSecurity: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const fadeIn  = easedIn(frame, 20);
+  const fadeOut = easedOut(frame - 340, 20);
+  const opacity = Math.min(fadeIn, fadeOut);
+  const titleSlide = spring({ fps, frame, config: { damping: 16, stiffness: 70 } });
+
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 64, opacity }}>
+      {/* Dual glow */}
+      <div style={{ position: "absolute", width: 500, height: 500, top: "10%", left: "20%",
+        background: `radial-gradient(circle, ${T.accent}20 0%, transparent 70%)`, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", width: 400, height: 400, bottom: "10%", right: "15%",
+        background: `radial-gradient(circle, ${T.green}18 0%, transparent 70%)`, pointerEvents: "none" }} />
+
+      <div style={{ textAlign: "center", transform: `translateY(${interpolate(titleSlide, [0,1], [50,0])}px)` }}>
+        <div style={{ fontSize: 18, color: T.accent, letterSpacing: "0.25em", fontWeight: 700, textTransform: "uppercase", marginBottom: 20 }}>
+          Built to be yours
+        </div>
+        <div style={{ fontSize: 64, fontWeight: 800, color: T.white, letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+          Download. Customize.<br />
+          <span style={{ background: `linear-gradient(135deg, ${T.accent}, ${T.purple})`,
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            Make it your own.
+          </span>
+        </div>
+      </div>
+
+      {/* Feature cards */}
+      <div style={{ display: "flex", gap: 28 }}>
+        {FEATURES.map((f, i) => {
+          const delay = i * 20 + 25;
+          const pop = spring({ fps, frame: Math.max(0, frame - delay), config: { damping: 12, stiffness: 90 } });
+          const float = Math.sin(frame * 0.04 + i * 1.4) * 5;
+          return (
+            <div key={i} style={{
+              width: 320, padding: "28px 28px",
+              background: `linear-gradient(150deg, ${f.color}14, ${T.surface}cc)`,
+              border: `1px solid ${f.color}50`,
+              borderRadius: 20,
+              transform: `scale(${pop}) translateY(${float}px)`,
+              opacity: pop,
+              boxShadow: `0 20px 50px ${f.color}18`,
+            }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>{f.icon}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: T.white, marginBottom: 8 }}>{f.label}</div>
+              <div style={{ fontSize: 16, color: T.muted, lineHeight: 1.5 }}>{f.sub}</div>
+              <div style={{ marginTop: 20, height: 2,
+                background: `linear-gradient(to right, ${f.color}, transparent)`, borderRadius: 1 }} />
+            </div>
+          );
+        })}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+// ─── Scene 8: Outro ────────────────────────────────────────────────────────
 const SceneOutro: React.FC = () => {
+
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const fadeIn = easedIn(frame, 25);

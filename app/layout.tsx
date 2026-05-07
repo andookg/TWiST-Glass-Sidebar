@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "TWiST Glass Sidebar — Live Podcast AI Companion",
   description:
-    "A live podcast companion with browser audio capture, realtime transcription, and AI persona bubbles. Captures audio, transcribes speech, routes to five AI personas, and generates social clips.",
+    "A live podcast companion with browser audio capture, realtime transcription, AI persona bubbles, two-stream recording, and social clip generation.",
   keywords: [
     "podcast",
     "AI",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "TWiST Glass Sidebar — Live Podcast AI Companion",
     description:
-      "Real-time AI-powered podcast enhancement with five persona workers, clip generation, and agent handoff.",
+      "Real-time AI-powered podcast enhancement with four persona workers, two-stream recording, clip generation, and agent handoff.",
     type: "website",
   },
 };
