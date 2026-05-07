@@ -436,7 +436,10 @@ h2 {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.76);
   border-radius: var(--radius);
-  background: var(--glass);
+  background:
+    radial-gradient(circle at 20% 8%, rgba(105, 183, 231, 0.2), transparent 28rem),
+    radial-gradient(circle at 82% 36%, rgba(237, 189, 118, 0.2), transparent 26rem),
+    var(--glass);
   box-shadow: var(--shadow);
   backdrop-filter: blur(28px) saturate(170%);
 }
@@ -444,11 +447,11 @@ h2 {
 .screenshot-shell::before {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 5;
   pointer-events: none;
   background:
-    linear-gradient(100deg, transparent 0 18%, rgba(255, 255, 255, 0.4) 23%, transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 34%);
+    linear-gradient(100deg, transparent 0 18%, rgba(255, 255, 255, 0.36) 23%, transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 34%);
   background-size: 190% 100%, 100% 100%;
   animation: sheen 7s ease-in-out infinite;
   content: "";
@@ -463,6 +466,547 @@ h2 {
   display: block;
   width: 100%;
   height: auto;
+}
+
+.app-simulator {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  min-height: 820px;
+  padding: 18px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.42)),
+    url("./glass-writers-room.png") center / cover no-repeat;
+}
+
+.app-simulator::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(22, 27, 35, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22, 27, 35, 0.045) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 70%);
+  content: "";
+}
+
+.app-simulator > * {
+  position: relative;
+  z-index: 1;
+}
+
+.sim-glass {
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: 0 18px 52px rgba(63, 72, 83, 0.13);
+  backdrop-filter: blur(22px) saturate(170%);
+}
+
+.sim-topbar,
+.sim-controls,
+.sim-agent-banner,
+.sim-flow,
+.sim-window,
+.sim-writers {
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: 0 18px 52px rgba(63, 72, 83, 0.13);
+  backdrop-filter: blur(22px) saturate(170%);
+}
+
+.sim-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+}
+
+.sim-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sim-mark,
+.sim-avatar,
+.sim-live-icon {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.2)),
+    linear-gradient(135deg, #e7efd4, #9fcfb3 48%, #69b7e7);
+  color: #24617d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 12px 34px rgba(63, 72, 83, 0.16);
+}
+
+.sim-mark {
+  width: 42px;
+  height: 42px;
+}
+
+.sim-brand strong,
+.sim-title strong,
+.sim-persona strong,
+.sim-card strong,
+.sim-transcript strong {
+  display: block;
+  color: var(--ink);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.sim-brand span,
+.sim-title span,
+.sim-persona span,
+.sim-card span,
+.sim-transcript span,
+.sim-mini {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.sim-buttons,
+.sim-control-row,
+.sim-pills {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.sim-button,
+.sim-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 830;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.sim-button.primary {
+  background: linear-gradient(135deg, #fff2d8, var(--peach));
+}
+
+.sim-button.live {
+  color: #126444;
+}
+
+.sim-controls,
+.sim-agent-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+}
+
+.sim-status {
+  color: #13724f;
+  border-color: rgba(19, 114, 79, 0.28);
+  background: rgba(237, 248, 240, 0.72);
+}
+
+.sim-meter {
+  position: relative;
+  flex: 1 1 180px;
+  max-width: 270px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(22, 27, 35, 0.08);
+}
+
+.sim-meter::after {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 38%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--mint), var(--blue), var(--peach));
+  animation: meterSweep 2.6s ease-in-out infinite;
+  content: "";
+}
+
+@keyframes meterSweep {
+  0%, 100% { width: 18%; }
+  50% { width: 82%; }
+}
+
+.sim-agent-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sim-agent-left .sim-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  animation: softPulse 2.8s ease-in-out infinite;
+}
+
+@keyframes softPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(105, 183, 231, 0.24), 0 12px 34px rgba(63, 72, 83, 0.16); }
+  50% { box-shadow: 0 0 0 10px rgba(105, 183, 231, 0), 0 18px 44px rgba(63, 72, 83, 0.18); }
+}
+
+.sim-pills .sim-pill {
+  min-height: 30px;
+  color: var(--soft-ink);
+  font-size: 0.72rem;
+}
+
+.sim-flow {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.sim-flow::before {
+  position: absolute;
+  top: 50%;
+  right: 7%;
+  left: 7%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--blue), var(--mint), var(--peach), var(--rose));
+  opacity: 0.5;
+  content: "";
+}
+
+.sim-step {
+  position: relative;
+  min-height: 72px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.sim-step:nth-child(2),
+.sim-step:nth-child(4) {
+  animation: stepGlow 3.6s ease-in-out infinite;
+}
+
+@keyframes stepGlow {
+  0%, 100% { background: rgba(255, 255, 255, 0.58); }
+  50% { background: rgba(231, 246, 255, 0.82); }
+}
+
+.sim-step svg {
+  width: 18px;
+  height: 18px;
+  margin-bottom: 8px;
+  color: #2d7899;
+}
+
+.sim-step strong {
+  display: block;
+  color: var(--ink);
+  font-size: 0.74rem;
+  line-height: 1.1;
+}
+
+.sim-step span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.sim-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.sim-window,
+.sim-writers {
+  overflow: hidden;
+}
+
+.sim-section-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border-bottom: 1px solid rgba(22, 27, 35, 0.1);
+}
+
+.sim-section-bar h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.08rem;
+  line-height: 1.1;
+}
+
+.sim-turns {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--soft-ink);
+  font-size: 0.72rem;
+  font-weight: 830;
+}
+
+.sim-stage {
+  position: relative;
+  min-height: 440px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(241, 248, 250, 0.78), rgba(246, 239, 223, 0.48)),
+    radial-gradient(circle at 52% 42%, rgba(105, 183, 231, 0.18), transparent 18rem);
+}
+
+.sim-stage::before {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(22, 27, 35, 0.05) 1px, transparent 1px);
+  background-size: 100% 32px;
+  content: "";
+}
+
+.sim-stage::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -18%;
+  width: 18%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
+  animation: scanColumn 5s ease-in-out infinite;
+  content: "";
+}
+
+@keyframes scanColumn {
+  0% { transform: translateX(0); }
+  55%, 100% { transform: translateX(760%); }
+}
+
+.sim-live-icon {
+  position: absolute;
+  top: 150px;
+  left: 50%;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  animation: floatListen 4.4s ease-in-out infinite;
+}
+
+@keyframes floatListen {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-10px); }
+}
+
+.sim-bars {
+  position: absolute;
+  right: 18%;
+  bottom: 92px;
+  left: 18%;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 6px;
+  height: 78px;
+}
+
+.sim-bars span {
+  width: 18px;
+  height: calc(var(--h) * 1px);
+  min-height: 14px;
+  border-radius: 999px 999px 6px 6px;
+  background: linear-gradient(180deg, rgba(105, 183, 231, 0.55), rgba(237, 189, 118, 0.45));
+  animation: barTalk 1.45s ease-in-out infinite;
+  animation-delay: calc(var(--d) * 100ms);
+}
+
+@keyframes barTalk {
+  0%, 100% { transform: scaleY(0.72); opacity: 0.72; }
+  45% { transform: scaleY(1.22); opacity: 1; }
+}
+
+.sim-live-stack {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  width: min(390px, calc(100% - 36px));
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 18px 50px rgba(63, 72, 83, 0.18);
+  backdrop-filter: blur(26px) saturate(170%);
+  animation: liveStack 4.8s ease-in-out infinite;
+}
+
+@keyframes liveStack {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.sim-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.sim-card {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  padding: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.sim-card + .sim-card {
+  margin-top: 6px;
+}
+
+.sim-card-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--tone), white 70%);
+  color: color-mix(in srgb, var(--tone), black 25%);
+}
+
+.sim-card p,
+.sim-persona p {
+  margin: 4px 0 0;
+  color: var(--soft-ink);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.32;
+}
+
+.sim-transcript {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.sim-transcript-row {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 10px;
+  min-height: 58px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.58);
+  animation: transcriptFade 5.2s ease-in-out infinite;
+}
+
+.sim-transcript-row:nth-child(2) {
+  animation-delay: 1.2s;
+}
+
+@keyframes transcriptFade {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0); }
+  50% { box-shadow: inset 0 0 0 1px rgba(105, 183, 231, 0.28); }
+}
+
+.sim-writers {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.sim-persona {
+  position: relative;
+  margin: 0 10px;
+  min-height: 142px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--tone), white 82%), rgba(255, 255, 255, 0.64)),
+    rgba(255, 255, 255, 0.58);
+  animation: personaWake 6s ease-in-out infinite;
+  animation-delay: calc(var(--delay) * 1s);
+}
+
+.sim-persona::after {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  content: attr(data-confidence);
+}
+
+@keyframes personaWake {
+  0%, 82%, 100% { transform: translateY(0); box-shadow: none; }
+  42%, 56% { transform: translateY(-4px); box-shadow: 0 14px 34px color-mix(in srgb, var(--tone), transparent 62%); }
+}
+
+.sim-persona-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sim-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.18)),
+    color-mix(in srgb, var(--tone), white 64%);
+  color: color-mix(in srgb, var(--tone), black 25%);
+}
+
+.sim-persona.is-active .sim-avatar {
+  animation: softPulse 2.2s ease-in-out infinite;
+}
+
+.sim-source {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  max-width: 100%;
+  min-height: 26px;
+  padding: 0 9px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--tone), white 30%);
+  border-radius: var(--radius);
+  color: color-mix(in srgb, var(--tone), black 18%);
+  font-size: 0.68rem;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .floating-card {
@@ -1038,6 +1582,39 @@ textarea.field {
     grid-template-columns: 1fr 1fr;
   }
 
+  .sim-topbar,
+  .sim-controls,
+  .sim-agent-banner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .sim-buttons,
+  .sim-control-row,
+  .sim-pills {
+    justify-content: flex-start;
+  }
+
+  .sim-flow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sim-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sim-stage {
+    min-height: 380px;
+  }
+
+  .sim-writers {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sim-writers .sim-section-bar {
+    grid-column: 1 / -1;
+  }
+
   .agent-layout {
     align-items: start;
   }
@@ -1093,6 +1670,60 @@ textarea.field {
   .screenshot-shell {
     margin-right: -8px;
     margin-left: -8px;
+  }
+
+  .app-simulator {
+    min-height: auto;
+    padding: 10px;
+  }
+
+  .sim-buttons .sim-button:nth-child(n + 4),
+  .sim-pills .sim-pill:nth-child(n + 3) {
+    display: none;
+  }
+
+  .sim-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sim-step {
+    min-height: 64px;
+    padding: 10px;
+  }
+
+  .sim-stage {
+    min-height: 430px;
+  }
+
+  .sim-live-icon {
+    top: 108px;
+    width: 92px;
+    height: 92px;
+  }
+
+  .sim-bars {
+    right: 7%;
+    bottom: 154px;
+    left: 7%;
+    gap: 4px;
+  }
+
+  .sim-bars span {
+    width: 12px;
+  }
+
+  .sim-live-stack {
+    right: 10px;
+    bottom: 10px;
+    width: calc(100% - 20px);
+  }
+
+  .sim-transcript-row {
+    grid-template-columns: 1fr;
+  }
+
+  .sim-writers {
+    grid-template-columns: 1fr;
   }
 
   .floating-card {
@@ -1189,10 +1820,101 @@ textarea.field {
         <p class="section-sub">Capture a podcast tab, watch the transcript build, and let the writer's room produce fact checks, jokes, news angles, and sharper commentary while the show is still happening.</p>
       </div>
       <div class="screenshot-shell reveal">
-        <img src="./app-screenshot.jpg" width="1018" height="1024" loading="lazy" decoding="async" alt="TWiST Glass Sidebar app interface with live transcript, agent flow, and AI writer's room" />
-        <div class="floating-card">
-          <small>Live card</small>
-          <strong>Agents now trigger on final transcript turns, so the sidebar writes as the conversation moves.</strong>
+        <div class="app-simulator" aria-label="Animated TWiST Glass Sidebar app simulator">
+          <div class="sim-topbar">
+            <div class="sim-brand">
+              <span class="sim-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M7 9v6M11 6v12M15 9v6M4 11v2M20 11v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+              <div><strong>TWiST Glass Sidebar</strong><span>Listening live intelligence layer</span></div>
+            </div>
+            <div class="sim-buttons" aria-hidden="true">
+              <span class="sim-button primary">Start</span>
+              <span class="sim-button live">AI Live</span>
+              <span class="sim-button">Enhanced</span>
+              <span class="sim-button">Setup</span>
+              <span class="sim-button">Clips</span>
+            </div>
+          </div>
+
+          <div class="sim-controls" aria-hidden="true">
+            <div class="sim-control-row">
+              <span class="sim-button">Tab</span>
+              <span class="sim-button">Mic</span>
+              <span class="sim-button">Both</span>
+              <span class="sim-button sim-status">Listening</span>
+            </div>
+            <div class="sim-meter"></div>
+            <span class="sim-button">Sample</span>
+          </div>
+
+          <div class="sim-agent-banner">
+            <div class="sim-agent-left">
+              <span class="sim-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
+              <div class="sim-title"><span>Agent ops</span><strong>4 workers routed through OpenAI Responses</strong></div>
+            </div>
+            <div class="sim-pills" aria-hidden="true">
+              <span class="sim-pill">gpt-4o</span>
+              <span class="sim-pill">live model</span>
+              <span class="sim-pill">clip scout ready</span>
+              <span class="sim-pill">two-stream recorder</span>
+            </div>
+          </div>
+
+          <div class="sim-flow" aria-hidden="true">
+            <div class="sim-step"><svg viewBox="0 0 24 24" fill="none"><path d="M7 9v6M12 6v12M17 9v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><strong>Listen</strong><span>audio stream</span></div>
+            <div class="sim-step"><svg viewBox="0 0 24 24" fill="none"><path d="M8 7h8M8 12h6M8 17h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><strong>Transcribe</strong><span>rolling memory</span></div>
+            <div class="sim-step"><svg viewBox="0 0 24 24" fill="none"><path d="M7 7h4v4H7zM13 13h4v4h-4zM11 9l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><strong>Route</strong><span>model and prompts</span></div>
+            <div class="sim-step"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><strong>Reason</strong><span>persona workers</span></div>
+            <div class="sim-step"><svg viewBox="0 0 24 24" fill="none"><path d="M7 4v16M17 4v16M7 9h10M7 15h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><strong>Publish</strong><span>glass cards</span></div>
+            <div class="sim-step"><svg viewBox="0 0 24 24" fill="none"><path d="M8 5v14l9-7-9-7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><strong>Clip</strong><span>render props</span></div>
+          </div>
+
+          <div class="sim-main-grid">
+            <div class="sim-window">
+              <div class="sim-section-bar">
+                <div class="sim-title"><span>On air</span><h3>Captured show tab</h3></div>
+                <span class="sim-turns">3 turns</span>
+              </div>
+              <div class="sim-stage">
+                <div class="sim-live-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="34" height="34" fill="none"><path d="M8 10v4M12 7v10M16 10v4M5 12h.01M19 12h.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+                <div class="sim-bars" aria-hidden="true">
+                  <span style="--h: 26; --d: 0"></span><span style="--h: 38; --d: 1"></span><span style="--h: 52; --d: 2"></span><span style="--h: 68; --d: 3"></span><span style="--h: 34; --d: 4"></span><span style="--h: 46; --d: 5"></span><span style="--h: 72; --d: 6"></span><span style="--h: 40; --d: 7"></span><span style="--h: 58; --d: 8"></span><span style="--h: 30; --d: 9"></span><span style="--h: 62; --d: 10"></span><span style="--h: 44; --d: 11"></span><span style="--h: 54; --d: 12"></span><span style="--h: 35; --d: 13"></span>
+                </div>
+                <div class="sim-live-stack">
+                  <div class="sim-card-head"><span>Live cards</span><span>4 ready</span></div>
+                  <div class="sim-card" style="--tone: var(--blue)"><span class="sim-card-icon">F</span><div><strong>Facts</strong><p>Flag the claim before it becomes the show's accepted version.</p></div></div>
+                  <div class="sim-card" style="--tone: var(--peach)"><span class="sim-card-icon">J</span><div><strong>Jokes</strong><p>One short tag appears while the hosts keep talking.</p></div></div>
+                </div>
+              </div>
+              <div class="sim-transcript">
+                <div class="sim-transcript-row"><span>04:36 PM</span><div><strong>Rolling show memory</strong><p>The guest claims real-time podcast feedback changes how producers cut clips.</p></div></div>
+                <div class="sim-transcript-row"><span>04:36 PM</span><div><strong>Speaker turn detected</strong><p>New fact check, news angle, joke, and cynical producer note are routed.</p></div></div>
+              </div>
+            </div>
+
+            <aside class="sim-writers" aria-label="Animated AI writer's room cards">
+              <div class="sim-section-bar">
+                <div class="sim-title"><span>Notification center</span><h3>AI writer's room</h3></div>
+                <span class="sim-turns">4 active</span>
+              </div>
+              <article class="sim-persona is-active" style="--tone: var(--blue); --delay: 0" data-confidence="91%">
+                <div class="sim-persona-top"><span class="sim-avatar">F</span><div><strong>Fact-checker</strong><span>Gary Dell'Abate</span></div></div>
+                <p>Find a source for the strongest claim and give the host a clean correction.</p>
+                <span class="sim-source">source: web search ready</span>
+              </article>
+              <article class="sim-persona" style="--tone: var(--peach); --delay: 1" data-confidence="88%">
+                <div class="sim-persona-top"><span class="sim-avatar">J</span><div><strong>Comedy Writer</strong><span>Jackie Martling</span></div></div>
+                <p>"Real-time feedback" sounds like a meeting that finally learned to talk back.</p>
+              </article>
+              <article class="sim-persona" style="--tone: var(--rose); --delay: 2" data-confidence="76%">
+                <div class="sim-persona-top"><span class="sim-avatar">N</span><div><strong>News Update</strong><span>Robin Quivers</span></div></div>
+                <p>Queue a recent AI audio headline and cite it if the hosts keep going.</p>
+              </article>
+              <article class="sim-persona" style="--tone: var(--violet); --delay: 3" data-confidence="84%">
+                <div class="sim-persona-top"><span class="sim-avatar">C</span><div><strong>Cynical Commentary</strong><span>Sidebar Troll</span></div></div>
+                <p>Sharp producer note ready, useful without turning the room toxic.</p>
+              </article>
+            </aside>
+          </div>
         </div>
       </div>
     </div>
