@@ -1,6 +1,6 @@
 # TWiST Glass Sidebar
 
-Open-source live podcast sidebar with OpenAI Realtime transcription, AI persona cards, project memory, clip suggestions, and agent handoffs.
+Open-source live podcast sidebar with OpenAI Realtime transcription, four AI persona cards, two-stream recording, project memory, clip suggestions, and agent handoffs.
 
 The app listens to a podcast/show through tab audio, microphone, or both, builds a rolling transcript, and renders a glass-style AI writer's room beside the regular stream.
 
@@ -64,7 +64,7 @@ npm run verify      # typecheck + build
 ## Environment
 
 ```bash
-OPENAI_API_KEY=sk-proj-your-key-here
+OPENAI_API_KEY=
 OPENAI_TRANSCRIBE_MODEL=gpt-realtime-whisper
 OPENAI_PERSONA_MODEL=gpt-4o
 OPENAI_REALTIME_MODEL=gpt-realtime-2
@@ -76,10 +76,10 @@ PERSONA_PROVIDER=openai
 Optional providers:
 
 ```bash
-OPENROUTER_API_KEY=sk-or-your-key-here
+OPENROUTER_API_KEY=
 OPENROUTER_MODEL=openrouter/auto
 AI_GATEWAY_BASE_URL=https://your-gateway.example.com
-AI_GATEWAY_API_KEY=your-key-here
+AI_GATEWAY_API_KEY=
 AI_GATEWAY_MODEL=your/provider-model
 ```
 

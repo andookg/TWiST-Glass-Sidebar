@@ -1,4 +1,4 @@
-import { readRuntimeSecretsSync } from "@/lib/runtime-config";
+import { cleanSecret, readRuntimeSecretsSync } from "@/lib/runtime-config";
 
 export type ModelProviderId = "openai" | "openrouter" | "custom";
 
@@ -71,7 +71,9 @@ export function resolveModelRoute(
   const provider = PROVIDERS.find((candidate) => candidate.id === providerId) ?? PROVIDERS[0];
 
   if (providerId === "openrouter") {
-    const apiKey = runtimeSecrets.openrouter?.apiKey || process.env.OPENROUTER_API_KEY || "";
+    const apiKey =
+      cleanSecret(runtimeSecrets.openrouter?.apiKey) ||
+      cleanSecret(process.env.OPENROUTER_API_KEY);
     return {
       ...provider,
       configured: Boolean(apiKey),
@@ -91,10 +93,9 @@ export function resolveModelRoute(
 
   if (providerId === "custom") {
     const apiKey =
-      runtimeSecrets.custom?.apiKey ||
-      process.env.AI_GATEWAY_API_KEY ||
-      process.env.CUSTOM_AI_API_KEY ||
-      "";
+      cleanSecret(runtimeSecrets.custom?.apiKey) ||
+      cleanSecret(process.env.AI_GATEWAY_API_KEY) ||
+      cleanSecret(process.env.CUSTOM_AI_API_KEY);
     const baseUrl =
       runtimeSecrets.custom?.baseUrl ||
       process.env.AI_GATEWAY_BASE_URL ||
@@ -117,7 +118,8 @@ export function resolveModelRoute(
     };
   }
 
-  const apiKey = runtimeSecrets.openai?.apiKey || process.env.OPENAI_API_KEY || "";
+  const apiKey =
+    cleanSecret(runtimeSecrets.openai?.apiKey) || cleanSecret(process.env.OPENAI_API_KEY);
   return {
     ...provider,
     configured: Boolean(apiKey),
@@ -147,18 +149,21 @@ function pickProvider(requested?: string): ModelProviderId {
     return process.env.PERSONA_PROVIDER;
   }
 
-  if (runtimeSecrets.openai?.apiKey || process.env.OPENAI_API_KEY) {
+  if (cleanSecret(runtimeSecrets.openai?.apiKey) || cleanSecret(process.env.OPENAI_API_KEY)) {
     return "openai";
   }
 
-  if (runtimeSecrets.openrouter?.apiKey || process.env.OPENROUTER_API_KEY) {
+  if (
+    cleanSecret(runtimeSecrets.openrouter?.apiKey) ||
+    cleanSecret(process.env.OPENROUTER_API_KEY)
+  ) {
     return "openrouter";
   }
 
   if (
-    (runtimeSecrets.custom?.apiKey ||
-      process.env.AI_GATEWAY_API_KEY ||
-      process.env.CUSTOM_AI_API_KEY) &&
+    (cleanSecret(runtimeSecrets.custom?.apiKey) ||
+      cleanSecret(process.env.AI_GATEWAY_API_KEY) ||
+      cleanSecret(process.env.CUSTOM_AI_API_KEY)) &&
     (runtimeSecrets.custom?.baseUrl ||
       process.env.AI_GATEWAY_BASE_URL ||
       process.env.CUSTOM_AI_BASE_URL)

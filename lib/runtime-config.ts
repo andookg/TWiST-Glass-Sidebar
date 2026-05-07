@@ -92,7 +92,7 @@ export async function saveRuntimeProviderConfig(input: RuntimeConfigInput) {
         }
       : {
           ...current.openai,
-          apiKey: clean(input.apiKey) || current.openai?.apiKey,
+          apiKey: cleanSecret(input.apiKey) || current.openai?.apiKey,
           personaModel: clean(input.model) || current.openai?.personaModel,
           transcribeModel: clean(input.transcribeModel) || current.openai?.transcribeModel,
           realtimeModel: clean(input.realtimeModel) || current.openai?.realtimeModel,
@@ -107,7 +107,7 @@ export async function saveRuntimeProviderConfig(input: RuntimeConfigInput) {
         }
       : {
           ...current.openrouter,
-          apiKey: clean(input.apiKey) || current.openrouter?.apiKey,
+          apiKey: cleanSecret(input.apiKey) || current.openrouter?.apiKey,
           model: clean(input.model) || current.openrouter?.model
         };
   }
@@ -121,7 +121,7 @@ export async function saveRuntimeProviderConfig(input: RuntimeConfigInput) {
         }
       : {
           ...current.custom,
-          apiKey: clean(input.apiKey) || current.custom?.apiKey,
+          apiKey: cleanSecret(input.apiKey) || current.custom?.apiKey,
           baseUrl: clean(input.baseUrl) || current.custom?.baseUrl,
           model: clean(input.model) || current.custom?.model,
           headers: clean(input.headers) || current.custom?.headers
@@ -135,15 +135,24 @@ export async function saveRuntimeProviderConfig(input: RuntimeConfigInput) {
 export function getRuntimeConfigStatus(
   secrets: RuntimeSecrets = readRuntimeSecretsSync()
 ): RuntimeConfigStatus {
+  const openaiRuntimeKey = cleanSecret(secrets.openai?.apiKey);
+  const openaiEnvKey = cleanSecret(process.env.OPENAI_API_KEY);
+  const openrouterRuntimeKey = cleanSecret(secrets.openrouter?.apiKey);
+  const openrouterEnvKey = cleanSecret(process.env.OPENROUTER_API_KEY);
+  const customRuntimeKey = cleanSecret(secrets.custom?.apiKey);
+  const customEnvKey = cleanSecret(
+    process.env.AI_GATEWAY_API_KEY || process.env.CUSTOM_AI_API_KEY
+  );
+
   return {
-    keySetupEnabled: true,
+    keySetupEnabled: process.env.BROWSER_KEY_SETUP_DISABLED !== "true",
     filePath: ".data/runtime-secrets.json",
     providers: {
       openai: {
-        configured: Boolean(secrets.openai?.apiKey || process.env.OPENAI_API_KEY),
-        keyConfigured: Boolean(secrets.openai?.apiKey || process.env.OPENAI_API_KEY),
-        source: sourceFor(secrets.openai?.apiKey, process.env.OPENAI_API_KEY),
-        redacted: redactSecret(secrets.openai?.apiKey ?? process.env.OPENAI_API_KEY),
+        configured: Boolean(openaiRuntimeKey || openaiEnvKey),
+        keyConfigured: Boolean(openaiRuntimeKey || openaiEnvKey),
+        source: sourceFor(openaiRuntimeKey, openaiEnvKey),
+        redacted: redactSecret(openaiRuntimeKey || openaiEnvKey),
         model: secrets.openai?.personaModel || process.env.OPENAI_PERSONA_MODEL || "gpt-4o",
         endpoint: "https://api.openai.com/v1/responses",
         transcribeModel:
@@ -160,23 +169,18 @@ export function getRuntimeConfigStatus(
           OPENAI_REALTIME_DEFAULTS.translationModel
       },
       openrouter: {
-        configured: Boolean(secrets.openrouter?.apiKey || process.env.OPENROUTER_API_KEY),
-        keyConfigured: Boolean(secrets.openrouter?.apiKey || process.env.OPENROUTER_API_KEY),
-        source: sourceFor(secrets.openrouter?.apiKey, process.env.OPENROUTER_API_KEY),
-        redacted: redactSecret(secrets.openrouter?.apiKey ?? process.env.OPENROUTER_API_KEY),
+        configured: Boolean(openrouterRuntimeKey || openrouterEnvKey),
+        keyConfigured: Boolean(openrouterRuntimeKey || openrouterEnvKey),
+        source: sourceFor(openrouterRuntimeKey, openrouterEnvKey),
+        redacted: redactSecret(openrouterRuntimeKey || openrouterEnvKey),
         model: secrets.openrouter?.model || process.env.OPENROUTER_MODEL || "openrouter/auto",
         endpoint: "https://openrouter.ai/api/v1/chat/completions"
       },
       custom: {
         configured: Boolean(secrets.custom?.baseUrl || process.env.AI_GATEWAY_BASE_URL || process.env.CUSTOM_AI_BASE_URL),
-        keyConfigured: Boolean(secrets.custom?.apiKey || process.env.AI_GATEWAY_API_KEY || process.env.CUSTOM_AI_API_KEY),
-        source: sourceFor(
-          secrets.custom?.apiKey,
-          process.env.AI_GATEWAY_API_KEY || process.env.CUSTOM_AI_API_KEY
-        ),
-        redacted: redactSecret(
-          secrets.custom?.apiKey ?? process.env.AI_GATEWAY_API_KEY ?? process.env.CUSTOM_AI_API_KEY
-        ),
+        keyConfigured: Boolean(customRuntimeKey || customEnvKey),
+        source: sourceFor(customRuntimeKey, customEnvKey),
+        redacted: redactSecret(customRuntimeKey || customEnvKey),
         model:
           secrets.custom?.model ||
           process.env.AI_GATEWAY_MODEL ||
@@ -195,7 +199,7 @@ export function getRuntimeConfigStatus(
 export function getRuntimeOpenAIConfig() {
   const secrets = readRuntimeSecretsSync();
   return {
-    apiKey: secrets.openai?.apiKey || process.env.OPENAI_API_KEY || "",
+    apiKey: cleanSecret(secrets.openai?.apiKey) || cleanSecret(process.env.OPENAI_API_KEY),
     transcribeModel:
       secrets.openai?.transcribeModel ||
       process.env.OPENAI_TRANSCRIBE_MODEL ||
@@ -225,7 +229,7 @@ function normalizeRuntimeSecrets(value: RuntimeSecrets): RuntimeSecrets {
     updatedAt: clean(value.updatedAt),
     openai: value.openai
       ? {
-          apiKey: clean(value.openai.apiKey),
+          apiKey: cleanSecret(value.openai.apiKey),
           personaModel: clean(value.openai.personaModel),
           transcribeModel: clean(value.openai.transcribeModel),
           realtimeModel: clean(value.openai.realtimeModel),
@@ -234,13 +238,13 @@ function normalizeRuntimeSecrets(value: RuntimeSecrets): RuntimeSecrets {
       : undefined,
     openrouter: value.openrouter
       ? {
-          apiKey: clean(value.openrouter.apiKey),
+          apiKey: cleanSecret(value.openrouter.apiKey),
           model: clean(value.openrouter.model)
         }
       : undefined,
     custom: value.custom
       ? {
-          apiKey: clean(value.custom.apiKey),
+          apiKey: cleanSecret(value.custom.apiKey),
           baseUrl: clean(value.custom.baseUrl),
           model: clean(value.custom.model),
           headers: clean(value.custom.headers)
@@ -287,7 +291,7 @@ function sourceFor(runtime?: string, env?: string): "runtime" | "env" | "none" {
 }
 
 function redactSecret(value?: string) {
-  const cleanValue = clean(value);
+  const cleanValue = cleanSecret(value);
   if (!cleanValue) {
     return "";
   }
@@ -301,4 +305,28 @@ function redactSecret(value?: string) {
 
 function clean(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+export function cleanSecret(value: unknown) {
+  const cleanValue = clean(value);
+  if (!cleanValue) {
+    return "";
+  }
+
+  const normalized = cleanValue.toLowerCase();
+  const placeholders = new Set([
+    "sk-proj-your-key-here",
+    "sk-or-your-key-here",
+    "your-key-here",
+    "your-webhook-secret",
+    "your-custom-api-key",
+    "your-service-role-key",
+    "..."
+  ]);
+
+  if (placeholders.has(normalized) || normalized.includes("your-")) {
+    return "";
+  }
+
+  return cleanValue;
 }

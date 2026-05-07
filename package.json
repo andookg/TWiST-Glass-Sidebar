@@ -2,7 +2,7 @@
   "name": "twist-glass-sidebar",
   "version": "0.1.0",
   "private": false,
-  "description": "Open-source live podcast sidebar with OpenAI Realtime transcription, AI persona cards, project memory, and agent handoffs.",
+  "description": "Open-source live podcast sidebar with OpenAI Realtime transcription, four AI persona cards, two-stream recording, project memory, and agent handoffs.",
   "license": "MIT",
   "repository": {
     "type": "git",
