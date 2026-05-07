@@ -79,6 +79,7 @@ export async function POST(request: Request) {
   const modelRoute = resolveModelRoute(body?.modelRouter);
   const promptStudio = normalizePromptStudio(body?.promptStudio);
   const projectMemory = normalizeProjectMemory(body?.projectMemory);
+  const fallbackSources = fallbackSourcesFromShowMetadata(body?.showMetadata);
 
   if (!transcriptWindow) {
     return NextResponse.json({ cards: [] });
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
 
   if (!modelRoute.configured) {
     return NextResponse.json({
-      cards: createFallbackCards(transcriptWindow, activePersonas),
+      cards: createFallbackCards(transcriptWindow, activePersonas, fallbackSources),
       mode: "fallback",
       modelRouter: publicRoute(modelRoute)
     });
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
 
   if (!response.ok) {
     return NextResponse.json({
-      cards: createFallbackCards(transcriptWindow, activePersonas),
+      cards: createFallbackCards(transcriptWindow, activePersonas, fallbackSources),
       mode: "fallback",
       fallbackReason: providerFallbackReason(response.status),
       details: payload,
@@ -110,7 +111,10 @@ export async function POST(request: Request) {
     });
   }
 
-  const cards = normalizeCards(parseCards(payload), activePersonas);
+  const cards = attachMetadataSources(
+    normalizeCards(parseCards(payload), activePersonas),
+    fallbackSources
+  );
   return NextResponse.json({ cards, modelRouter: publicRoute(modelRoute) });
 }
 
@@ -296,6 +300,45 @@ function publicRoute(modelRoute: ResolvedModelRoute & { configured: boolean }) {
 
 function authHeader(apiKey: string): Record<string, string> {
   return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+}
+
+function fallbackSourcesFromShowMetadata(showMetadata?: PersonaAnalyzeRequest["showMetadata"]) {
+  const url = limitText(showMetadata?.url, 500);
+  if (!/^https?:\/\//.test(url)) {
+    return undefined;
+  }
+
+  const title = limitText(showMetadata?.title, 110) || "Podcast sample";
+  const timestamp = limitText(showMetadata?.timestamp, 24);
+  return [
+    {
+      title: timestamp ? `${title} (${timestamp})` : title,
+      url
+    }
+  ];
+}
+
+function attachMetadataSources(cards: PersonaCard[], fallbackSources?: PersonaCard["sources"]) {
+  if (!fallbackSources?.length) {
+    return cards;
+  }
+
+  return cards.map((card) => {
+    if (card.type !== "fact" && card.type !== "news") {
+      return card;
+    }
+
+    const existingUrls = new Set(card.sources.map((source) => source.url));
+    const nextSources = [
+      ...card.sources,
+      ...fallbackSources.filter((source) => !existingUrls.has(source.url))
+    ].slice(0, 3);
+
+    return {
+      ...card,
+      sources: nextSources
+    };
+  });
 }
 
 function providerFallbackReason(status: number) {

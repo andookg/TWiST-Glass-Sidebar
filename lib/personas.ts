@@ -77,6 +77,8 @@ export type PersonaAnalyzeRequest = {
     title?: string;
     host?: string;
     episode?: string;
+    url?: string;
+    timestamp?: string;
   };
 };
 
@@ -121,7 +123,8 @@ export function personaTypeFor(id: PersonaId): PersonaCard["type"] {
 
 export function createFallbackCards(
   transcriptWindow: string,
-  activePersonas: PersonaId[]
+  activePersonas: PersonaId[],
+  fallbackSources?: PersonaCard["sources"]
 ): PersonaCard[] {
   const trimmed = transcriptWindow.trim();
   if (!trimmed) {
@@ -131,6 +134,15 @@ export function createFallbackCards(
   const topic = summarizeTopic(trimmed);
   const now = new Date().toISOString();
   const start = new Date(Date.now() - 15_000).toISOString();
+  const sources =
+    fallbackSources && fallbackSources.length > 0
+      ? fallbackSources
+      : [
+          {
+            title: "Demo mode",
+            url: "https://platform.openai.com/docs/guides/realtime-transcription"
+          }
+        ];
 
   return activePersonas.slice(0, 4).map((personaId, index) => {
     const type = personaTypeFor(personaId);
@@ -142,15 +154,7 @@ export function createFallbackCards(
       text,
       type,
       confidence: type === "comedy" || type === "cynic" ? 0.72 : 0.64,
-      sources:
-        type === "fact" || type === "news"
-          ? [
-              {
-                title: "Demo mode",
-                url: "https://platform.openai.com/docs/guides/realtime-transcription"
-              }
-            ]
-          : [],
+      sources: type === "fact" || type === "news" ? sources : [],
       createdAt: now,
       transcriptRange: {
         start,

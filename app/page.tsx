@@ -309,10 +309,18 @@ function summarizeAttachedMemory(attachments: MemoryAttachment[]) {
   }).join("\n");
 }
 
+const SAMPLE_SHOW = {
+  title: "The $60 billion resource hiding in space, and the startup trying to mine it | E2268",
+  host: "This Week in Startups",
+  episode: "TWiST E2268 at 56:59",
+  url: "https://www.youtube.com/watch?v=TN2RmNuX4-k&t=3419s",
+  timestamp: "56:59"
+};
+
 const SAMPLE_LINES = [
-  "The hosts are debating whether New York City still has a larger population than Los Angeles and whether live shows should bring back old radio-style sound boards.",
-  "One guest claims a new AI audio model can fact-check a podcast in real time while the producer asks for a quick joke about startup demo days.",
-  "The panel shifts to a breaking entertainment story and wonders whether the news is current enough to mention on-air without checking a second source."
+  "TWiST E2268 sample: the hosts discuss Open Granola and the idea of real-time feedback that surfaces useful startup resources during an active conversation.",
+  "Jason asks to see the GitHub project in action, noting that the open-source app is getting close to 2,000 stars, uses an MIT license, and already has community forks.",
+  "The demo setup mentions fast local transcription with Parakeet, OpenRouter for LLM routing, local options like Ollama or MLX, embeddings, and an insights panel that reacts while people talk."
 ];
 
 const AGENT_FLOW_STEPS = [
@@ -695,6 +703,7 @@ export default function Home() {
       setSpeakingPersonaIds(new Set(activePersonaIds));
 
       try {
+        const isSampleWindow = trimmed.includes("TWiST E2268 sample");
         const response = await fetch("/api/personas/analyze", {
           method: "POST",
           headers: {
@@ -710,9 +719,11 @@ export default function Home() {
             promptStudio,
             projectMemory: buildPublicProjectMemory(projectMemory, memoryAttachments),
             showMetadata: {
-              title: "Live podcast demo",
-              host: "Captured browser audio",
-              episode: promptStudio.showContext
+              title: isSampleWindow ? SAMPLE_SHOW.title : "Live podcast demo",
+              host: isSampleWindow ? SAMPLE_SHOW.host : "Captured browser audio",
+              episode: isSampleWindow ? SAMPLE_SHOW.episode : promptStudio.showContext,
+              url: isSampleWindow ? SAMPLE_SHOW.url : undefined,
+              timestamp: isSampleWindow ? SAMPLE_SHOW.timestamp : undefined
             }
           })
         });
@@ -1566,7 +1577,7 @@ export default function Home() {
           </div>
         </div>
 
-        <button className="ghost-button" onClick={addSampleTranscript} title="Run sample transcript">
+        <button className="ghost-button" onClick={addSampleTranscript} title={`Run sample from ${SAMPLE_SHOW.episode}`}>
           <Sparkles size={17} />
           <span>Sample</span>
         </button>
