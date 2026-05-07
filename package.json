@@ -12,12 +12,15 @@
     "url": "https://github.com/andookg/TWiST-Glass-Sidebar/issues"
   },
   "homepage": "https://github.com/andookg/TWiST-Glass-Sidebar#readme",
+  "main": "desktop/main.cjs",
   "engines": {
     "node": ">=20.11"
   },
   "scripts": {
     "setup": "node scripts/setup-local.mjs",
     "activate": "node scripts/activate.mjs",
+    "desktop": "electron desktop/main.cjs",
+    "desktop:pack": "npm run build && electron-builder --mac dir",
     "dev": "next dev",
     "dev:local": "next dev --hostname 127.0.0.1",
     "build": "next build",
@@ -39,6 +42,38 @@
     "@types/node": "^22.10.10",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
+    "electron": "^42.0.0",
+    "electron-builder": "^26.8.1",
     "typescript": "^5.7.3"
+  },
+  "build": {
+    "appId": "com.twist.glasssidebar",
+    "productName": "TWiST Glass Sidebar",
+    "asar": true,
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "files": [
+      ".next/**/*",
+      "app/**/*",
+      "desktop/**/*",
+      "lib/**/*",
+      "public/**/*",
+      "next-env.d.ts",
+      "next.config.*",
+      "package.json",
+      "tsconfig.json"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dir"
+      ],
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "TWiST Glass Sidebar listens to podcast or microphone audio for live transcription and AI sidebar cards.",
+        "NSCameraUsageDescription": "TWiST Glass Sidebar can access camera/video sources if you choose to share them for capture.",
+        "NSScreenCaptureUsageDescription": "TWiST Glass Sidebar captures a selected screen, window, or tab so it can transcribe podcast audio and record the enhanced stream."
+      }
+    }
   }
 }

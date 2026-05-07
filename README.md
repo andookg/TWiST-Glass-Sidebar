@@ -99,11 +99,32 @@ Once you download it, you can add, change, and make it your own:
 ```bash
 npm run setup       # create .env.local and .data/
 npm run activate    # setup + start dev server
+npm run desktop     # open native macOS-friendly capture wrapper
+npm run desktop:pack # build a local .app bundle in dist-desktop/
 npm run dev:local   # start on 127.0.0.1:3000
 npm run doctor      # safety + secret checks
 npm run typecheck   # TypeScript check
 npm run build       # production build
 npm run verify      # typecheck + build
+```
+
+---
+
+## Native Desktop Capture
+
+If your browser cannot expose tab audio or microphone devices, use the Electron wrapper:
+
+```bash
+npm run desktop
+```
+
+It starts the local app, opens a standalone desktop window, requests macOS microphone permission, and uses Electron display capture for screen/tab capture. If macOS blocks capture, enable **TWiST Glass Sidebar** or **Electron** in System Settings -> Privacy & Security -> Screen & System Audio Recording.
+
+To create a local macOS app bundle:
+
+```bash
+npm run desktop:pack
+open "dist-desktop/mac/TWiST Glass Sidebar.app"
 ```
 
 ---

@@ -4,6 +4,7 @@
 .next
 node_modules
 dist
+dist-desktop
 out
 coverage
 .vercel

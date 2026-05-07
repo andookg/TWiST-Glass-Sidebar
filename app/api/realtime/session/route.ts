@@ -17,7 +17,83 @@ export async function POST() {
     );
   }
 
-  const sessionConfig = {
+  const options = {
+    includePrompt: true,
+    includeTurnDetection: true,
+    includeNoiseReduction: true,
+    includeLogprobs: true
+  };
+
+  let lastStatus = 500;
+  let lastPayload: unknown = null;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const response = await createRealtimeSecret(
+      apiKey,
+      buildTranscriptionSession(transcribeModel, options)
+    );
+    const payload = await response.json().catch(() => null);
+
+    if (response.ok) {
+      return NextResponse.json(payload);
+    }
+
+    lastStatus = response.status;
+    lastPayload = payload;
+
+    const unsupportedField = unsupportedRealtimeField(payload);
+    if (!unsupportedField) {
+      break;
+    }
+
+    if (unsupportedField === "prompt") options.includePrompt = false;
+    if (unsupportedField === "turn_detection") options.includeTurnDetection = false;
+    if (unsupportedField === "noise_reduction") options.includeNoiseReduction = false;
+    if (unsupportedField === "include") options.includeLogprobs = false;
+  }
+
+  return realtimeError(lastStatus, lastPayload);
+}
+
+function buildTranscriptionSession(
+  transcribeModel: string,
+  options: {
+    includePrompt: boolean;
+    includeTurnDetection: boolean;
+    includeNoiseReduction: boolean;
+    includeLogprobs: boolean;
+  }
+) {
+  const transcription: Record<string, unknown> = {
+    model: transcribeModel,
+    language: "en"
+  };
+
+  if (options.includePrompt) {
+    transcription.prompt =
+      "Podcast, talk radio, panel conversation, live show commentary, names, numbers, news, jokes, and factual claims.";
+  }
+
+  const input: Record<string, unknown> = {
+    transcription
+  };
+
+  if (options.includeNoiseReduction) {
+    input.noise_reduction = {
+      type: "far_field"
+    };
+  }
+
+  if (options.includeTurnDetection) {
+    input.turn_detection = {
+      type: "server_vad",
+      threshold: 0.5,
+      prefix_padding_ms: 300,
+      silence_duration_ms: 650
+    };
+  }
+
+  const sessionConfig: Record<string, unknown> = {
     expires_after: {
       anchor: "created_at",
       seconds: 600
@@ -25,29 +101,23 @@ export async function POST() {
     session: {
       type: "transcription",
       audio: {
-        input: {
-          transcription: {
-            model: transcribeModel,
-            language: "en",
-            prompt:
-              "Podcast, talk radio, panel conversation, live show commentary, names, numbers, news, jokes, and factual claims."
-          },
-          noise_reduction: {
-            type: "far_field"
-          },
-          turn_detection: {
-            type: "server_vad",
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 650
-          }
-        }
-      },
-      include: ["item.input_audio_transcription.logprobs"]
+        input
+      }
     }
   };
 
-  const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
+  if (options.includeLogprobs) {
+    sessionConfig.session = {
+      ...(sessionConfig.session as Record<string, unknown>),
+      include: ["item.input_audio_transcription.logprobs"]
+    };
+  }
+
+  return sessionConfig;
+}
+
+function createRealtimeSecret(apiKey: string, sessionConfig: Record<string, unknown>) {
+  return fetch("https://api.openai.com/v1/realtime/client_secrets", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -55,18 +125,40 @@ export async function POST() {
     },
     body: JSON.stringify(sessionConfig)
   });
+}
 
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    return NextResponse.json(
-      {
-        error: "Failed to create OpenAI Realtime client secret.",
-        details: payload
-      },
-      { status: response.status }
-    );
+function unsupportedRealtimeField(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return null;
   }
 
-  return NextResponse.json(payload);
+  const error = "error" in payload ? (payload as { error?: unknown }).error : undefined;
+  if (!error || typeof error !== "object") {
+    return null;
+  }
+
+  const param = "param" in error ? String((error as { param?: unknown }).param ?? "") : "";
+  const message = "message" in error ? String((error as { message?: unknown }).message ?? "") : "";
+  const lowerMessage = message.toLowerCase();
+
+  if (param.endsWith(".prompt") || lowerMessage.includes("prompt")) return "prompt";
+  if (param.includes("turn_detection") || lowerMessage.includes("turn detection")) {
+    return "turn_detection";
+  }
+  if (param.includes("noise_reduction") || lowerMessage.includes("noise reduction")) {
+    return "noise_reduction";
+  }
+  if (param.includes("include") || lowerMessage.includes("logprobs")) return "include";
+
+  return null;
+}
+
+function realtimeError(status: number, payload: unknown) {
+  return NextResponse.json(
+    {
+      error: "Failed to create OpenAI Realtime client secret.",
+      details: payload
+    },
+    { status }
+  );
 }
