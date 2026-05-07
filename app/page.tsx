@@ -875,7 +875,9 @@ export default function Home() {
     };
   }, []);
 
-  const startCapture = async () => {
+  const startCapture = async (overrideMode?: CaptureMode) => {
+    const activeMode = overrideMode ?? captureMode;
+    if (overrideMode) setCaptureMode(overrideMode);
     setStatus("connecting");
     setErrorMessage("");
     setCaptureErrorKind(null);
@@ -908,10 +910,10 @@ export default function Home() {
     };
 
     try {
-      await activateCapture(captureMode);
+      await activateCapture(activeMode);
     } catch (error) {
-      const captureError = normalizeCaptureError(error, captureMode);
-      const canFallbackToMic = captureMode !== "mic";
+      const captureError = normalizeCaptureError(error, activeMode);
+      const canFallbackToMic = activeMode !== "mic";
 
       if (canFallbackToMic) {
         try {
@@ -1778,11 +1780,7 @@ export default function Home() {
               {captureErrorKind === "permission" && captureMode === "mic" ? (
                 <button
                   className="mini-button"
-                  onClick={() => {
-                    setCaptureMode("tab");
-                    setErrorMessage("");
-                    setCaptureErrorKind(null);
-                  }}
+                  onClick={() => void startCapture("tab")}
                   type="button"
                   title="Recommended: capture the podcast tab directly, no permission grant needed"
                 >
@@ -1823,11 +1821,7 @@ export default function Home() {
               {!(captureErrorKind === "permission" && captureMode === "mic") ? (
                 <button
                   className="mini-button"
-                  onClick={() => {
-                    setCaptureMode(captureMode === "mic" ? "tab" : "mic");
-                    setErrorMessage("");
-                    setCaptureErrorKind(null);
-                  }}
+                  onClick={() => void startCapture(captureMode === "mic" ? "tab" : "mic")}
                   type="button"
                 >
                   {captureMode === "mic" ? <MonitorUp size={15} /> : <Mic size={15} />}
