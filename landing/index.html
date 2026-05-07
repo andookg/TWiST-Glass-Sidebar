@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TWiST Glass Sidebar — Real-Time AI Podcast Companion</title>
+<meta name="description" content="The real-time AI companion for live podcasts. Browser audio capture, 5 AI personas, glass UI, Remotion clip studio. Open source."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#000;--surface:#111;--border:#222;--accent:#0070F3;
+  --white:#fff;--muted:#888;--green:#22C55E;--purple:#A855F7;
+  --amber:#F5A623;--red:#E00000;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--white);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+
+/* GRID BG */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:radial-gradient(circle,#333 1px,transparent 1px);
+  background-size:40px 40px;opacity:.25;pointer-events:none;z-index:0;
+}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 48px;
+  background:rgba(0,0,0,.8);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);}
+.nav-logo{font-size:18px;font-weight:700;letter-spacing:-.02em}
+.nav-logo span{color:var(--accent)}
+.nav-links{display:flex;gap:32px;font-size:14px;color:var(--muted)}
+.nav-links a:hover{color:var(--white);transition:.2s}
+.nav-cta{background:var(--white);color:var(--bg);font-weight:600;font-size:14px;
+  padding:10px 24px;border-radius:8px;transition:.2s}
+.nav-cta:hover{opacity:.85}
+
+/* SECTIONS */
+section{position:relative;z-index:1}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:120px 24px 80px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;
+  background:rgba(0,112,243,.15);border:1px solid rgba(0,112,243,.4);
+  color:var(--accent);font-size:13px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;padding:8px 20px;border-radius:40px;margin-bottom:32px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--red);
+  box-shadow:0 0 8px var(--red);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+h1{font-size:clamp(48px,8vw,96px);font-weight:800;line-height:1.05;
+  letter-spacing:-.04em;margin-bottom:24px}
+h1 span{background:linear-gradient(135deg,var(--white) 40%,var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:clamp(18px,2.5vw,24px);color:var(--muted);
+  max-width:600px;margin:0 auto 48px}
+.hero-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--white);color:var(--bg);font-weight:700;font-size:16px;
+  padding:16px 36px;border-radius:10px;transition:.2s;display:flex;align-items:center;gap:8px}
+.btn-primary:hover{opacity:.9;transform:translateY(-2px)}
+.btn-ghost{border:1px solid var(--border);color:var(--white);font-size:16px;
+  padding:16px 36px;border-radius:10px;transition:.2s;display:flex;align-items:center;gap:8px}
+.btn-ghost:hover{border-color:var(--accent);background:rgba(0,112,243,.08)}
+
+/* VIDEO */
+.video-section{padding:80px 24px;display:flex;justify-content:center}
+.video-wrap{width:100%;max-width:900px;aspect-ratio:16/9;border-radius:20px;overflow:hidden;
+  border:1px solid var(--border);box-shadow:0 40px 100px rgba(0,112,243,.15)}
+.video-wrap iframe{width:100%;height:100%;border:0}
+
+/* PERSONAS */
+.personas{padding:100px 24px;max-width:1200px;margin:0 auto}
+.section-label{font-size:13px;color:var(--accent);letter-spacing:.2em;font-weight:700;
+  text-transform:uppercase;text-align:center;margin-bottom:16px}
+.section-title{font-size:clamp(36px,5vw,56px);font-weight:800;text-align:center;
+  letter-spacing:-.03em;margin-bottom:16px}
+.section-sub{text-align:center;color:var(--muted);font-size:18px;margin-bottom:64px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px}
+.card{background:linear-gradient(150deg,var(--c,#0070F3)14,var(--surface) 100%);
+  border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:28px;
+  transition:.3s;cursor:default}
+.card:hover{transform:translateY(-6px);border-color:var(--c,var(--accent));
+  box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.card-icon{font-size:40px;margin-bottom:16px}
+.card h3{font-size:18px;font-weight:700;margin-bottom:8px}
+.card p{font-size:14px;color:var(--muted);line-height:1.6}
+.card-bar{height:2px;margin-top:20px;border-radius:1px;
+  background:linear-gradient(to right,var(--c,var(--accent)),transparent)}
+
+/* PIPELINE */
+.pipeline{padding:100px 24px;background:linear-gradient(180deg,transparent,rgba(0,112,243,.04),transparent)}
+.pipeline-inner{max-width:1000px;margin:0 auto}
+.flow{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;margin-top:64px}
+.flow-step{display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 8px}
+.flow-icon{width:80px;height:80px;border-radius:20px;display:flex;align-items:center;justify-content:center;
+  font-size:32px;background:rgba(255,255,255,.05);border:1px solid var(--border)}
+.flow-label{font-size:14px;font-weight:600;text-align:center}
+.flow-sub{font-size:12px;color:var(--muted);text-align:center}
+.flow-arrow{font-size:24px;color:var(--border);padding:0 4px;margin-bottom:28px}
+
+/* AGENT */
+.agent{padding:100px 24px;max-width:900px;margin:0 auto;text-align:center}
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-top:56px;text-align:left}
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:.3s}
+.agent-card:hover{border-color:var(--accent);transform:translateY(-4px)}
+.agent-card-icon{font-size:32px;margin-bottom:12px}
+.agent-card h4{font-size:16px;font-weight:700;margin-bottom:6px}
+.agent-card p{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* EMAIL */
+.email-section{padding:120px 24px;max-width:600px;margin:0 auto;text-align:center}
+.email-box{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:56px 48px;
+  box-shadow:0 40px 100px rgba(0,112,243,.1)}
+.email-box h2{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.03em;margin-bottom:12px}
+.email-box p{color:var(--muted);font-size:16px;margin-bottom:36px}
+.form-row{display:flex;flex-direction:column;gap:14px}
+.form-input{background:rgba(255,255,255,.05);border:1px solid var(--border);
+  color:var(--white);font-size:16px;font-family:'Inter',sans-serif;
+  padding:16px 20px;border-radius:10px;outline:none;transition:.2s;width:100%}
+.form-input:focus{border-color:var(--accent);background:rgba(0,112,243,.06)}
+.form-input::placeholder{color:var(--muted)}
+textarea.form-input{resize:vertical;min-height:100px}
+.form-submit{background:var(--accent);color:var(--white);font-weight:700;font-size:16px;
+  padding:18px;border:none;border-radius:10px;cursor:pointer;width:100%;
+  font-family:'Inter',sans-serif;transition:.2s}
+.form-submit:hover{opacity:.9;transform:translateY(-2px)}
+.form-note{font-size:13px;color:var(--muted);margin-top:12px}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:40px 48px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:gap;color:var(--muted);font-size:14px}
+.footer-links{display:flex;gap:24px}
+.footer-links a:hover{color:var(--white);transition:.2s}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  nav{padding:16px 20px}.nav-links{display:none}
+  .hero{padding:100px 20px 60px}
+  .flow-arrow{display:none}
+  .email-box{padding:36px 24px}
+  footer{flex-direction:column;gap:16px;text-align:center;padding:32px 20px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">TWiST <span>Glass</span> Sidebar</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#agent">Agent Ready</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <a href="#contact" class="nav-cta">Get Early Access</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">
+    <span class="live-dot"></span>
+    Live AI • Open Source • Agent Ready
+  </div>
+  <h1>Your podcast,<br/><span>live and intelligent.</span></h1>
+  <p class="hero-sub">TWiST Glass Sidebar listens to your browser audio in real time and routes every word to five specialized AI minds — all displayed live in a stunning glass interface.</p>
+  <div class="hero-btns">
+    <a href="https://youtu.be/KMeLNxoGffg" target="_blank" class="btn-primary">▶ Watch Demo</a>
+    <a href="https://github.com/andookg/TWiST-Glass-Sidebar" target="_blank" class="btn-ghost">⭐ GitHub</a>
+  </div>
+</section>
+
+<!-- VIDEO -->
+<section class="video-section">
+  <div class="video-wrap">
+    <iframe src="https://www.youtube.com/embed/KMeLNxoGffg" allowfullscreen
+      allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"></iframe>
+  </div>
+</section>
+
+<!-- PERSONAS -->
+<section class="personas" id="features">
+  <p class="section-label">Five AI Minds</p>
+  <h2 class="section-title">One Sidebar. Zero Blind Spots.</h2>
+  <p class="section-sub">Parallel workers. Zero latency. Pure broadcast signal.</p>
+  <div class="cards">
+    <div class="card" style="--c:#22C55E">
+      <div class="card-icon">✅</div>
+      <h3>Fact Checker</h3>
+      <p>Catches errors and unverified claims before you make them on-air.</p>
+      <div class="card-bar"></div>
+    </div>
+    <div class="card" style="--c:#F5A623">
+      <div class="card-icon">😄</div>
+      <h3>Comedy Writer</h3>
+      <p>Drops perfectly-timed one-liners and jokes directly to your feed.</p>
+      <div class="card-bar"></div>
+    </div>
+    <div class="card" style="--c:#0070F3">
+      <div class="card-icon">📰</div>
+      <h3>News Update</h3>
+      <p>Scans and surfaces breaking stories relevant to your conversation.</p>
+      <div class="card-bar"></div>
+    </div>
+    <div class="card" style="--c:#A855F7">
+      <div class="card-icon">🎵</div>
+      <h3>Sound Context</h3>
+      <p>Suggests audio cues, lower thirds, and production moments in real time.</p>
+      <div class="card-bar"></div>
+    </div>
+    <div class="card" style="--c:#E00000">
+      <div class="card-icon">🧐</div>
+      <h3>Cynical Commentary</h3>
+      <p>Keeps every claim sharp and honest with skeptical analysis.</p>
+      <div class="card-bar"></div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section class="pipeline" id="how">
+  <div class="pipeline-inner">
+    <p class="section-label">How It Works</p>
+    <h2 class="section-title">From audio to insight in milliseconds.</h2>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-icon">🎙️</div>
+        <div class="flow-label">Browser Audio</div>
+        <div class="flow-sub">Tab + Mic</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">⚡</div>
+        <div class="flow-label">OpenAI Realtime</div>
+        <div class="flow-sub">WebRTC stream</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">⚙️</div>
+        <div class="flow-label">Model Router</div>
+        <div class="flow-sub">OpenAI · OpenRouter</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">🧠</div>
+        <div class="flow-label">5 AI Personas</div>
+        <div class="flow-sub">Parallel workers</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">✨</div>
+        <div class="flow-label">Glass Cards</div>
+        <div class="flow-sub">Live on screen</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">✂️</div>
+        <div class="flow-label">Clip Studio</div>
+        <div class="flow-sub">Remotion MP4</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENT -->
+<section class="agent" id="agent">
+  <p class="section-label">Built to be yours</p>
+  <h2 class="section-title">Download. Customize.<br/>Make it your own.</h2>
+  <p class="section-sub" style="margin-top:16px">Once you download it, you can add, change, and customize everything — models, personas, prompts, storage, and UI — all on your terms.</p>
+  <div class="agent-grid">
+    <div class="agent-card">
+      <div class="agent-card-icon">🤖</div>
+      <h4>Home Base Agent</h4>
+      <p>The entire system is API-ready. Plug in your own agent and activate it instantly.</p>
+    </div>
+    <div class="agent-card">
+      <div class="agent-card-icon">🔒</div>
+      <h4>Security First</h4>
+      <p>API keys never leave your server. No data stored without your explicit permission.</p>
+    </div>
+    <div class="agent-card">
+      <div class="agent-card-icon">📦</div>
+      <h4>100% Open Source</h4>
+      <p>Fork it, own it, extend it. MIT licensed. No lock-in, ever.</p>
+    </div>
+    <div class="agent-card">
+      <div class="agent-card-icon">⚙️</div>
+      <h4>Fully Customizable</h4>
+      <p>Swap models, rewrite personas, add storage backends — all in clean modular hooks.</p>
+    </div>
+  </div>
+</section>
+
+<!-- EMAIL -->
+<section class="email-section" id="contact">
+  <div class="email-box">
+    <p class="section-label" style="text-align:center;margin-bottom:12px">Get in touch</p>
+    <h2>Ready to go live?</h2>
+    <p>Send us a message and we'll get back to you with setup help, partnership opportunities, or just to talk podcast AI.</p>
+    <form action="https://formspree.io/f/andres@opcelerate.com" method="POST" class="form-row">
+      <input type="text" name="name" class="form-input" placeholder="Your name" required/>
+      <input type="email" name="email" class="form-input" placeholder="Your email" required/>
+      <textarea name="message" class="form-input" placeholder="Tell us about your podcast or project..." required></textarea>
+      <input type="hidden" name="_subject" value="TWiST Glass Sidebar — New Lead"/>
+      <input type="hidden" name="_replyto" value="andres@opcelerate.com"/>
+      <button type="submit" class="form-submit">Send Message →</button>
+    </form>
+    <p class="form-note">Replies go to andres@opcelerate.com · Usually within 24h</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div style="font-weight:700">TWiST <span style="color:var(--accent)">Glass</span> Sidebar</div>
+  <div class="footer-links">
+    <a href="https://github.com/andookg/TWiST-Glass-Sidebar" target="_blank">GitHub</a>
+    <a href="https://youtu.be/KMeLNxoGffg" target="_blank">Demo</a>
+    <a href="mailto:andres@opcelerate.com">Contact</a>
+  </div>
+  <div>MIT License · Open Source · Built for podcasters</div>
+</footer>
+
+</body>
+</html>
