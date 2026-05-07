@@ -22,17 +22,16 @@
 
 ## What it does
 
-TWiST Glass Sidebar listens to your browser audio in real time and routes every word to **five specialized AI minds** — all displayed live in a glass-morphism interface designed for broadcast.
+TWiST Glass Sidebar listens to your browser audio in real time and routes every useful moment to **four specialized AI minds** — all displayed live in a glass-morphism interface designed for broadcast.
 
 | Persona | Role |
 |---|---|
 | ✅ **Fact Checker** | Catches errors before you make them |
 | 😄 **Comedy Writer** | Drops one-liners on-air |
 | 📰 **News Update** | Scans what's breaking right now |
-| 🎵 **Sound Context** | Suggests cues, clips & lower thirds |
 | 🧐 **Cynical Commentary** | Keeps everything sharp and honest |
 
-When the show is done — one click exports your best moments to video via **Remotion**.
+Record the regular show stream, record the enhanced sidebar stream, and hand the best moments to **Remotion**.
 
 ---
 
@@ -48,7 +47,7 @@ npm run activate
 Open `http://127.0.0.1:3000` and add your API key in the **Setup** panel — or set it in `.env.local`:
 
 ```bash
-OPENAI_API_KEY=sk-...
+OPENAI_API_KEY=
 ```
 
 ---
@@ -57,7 +56,8 @@ OPENAI_API_KEY=sk-...
 
 - 🎙️ **Browser Audio Capture** — Tab, Mic, or Both, simultaneously
 - ⚡ **OpenAI Realtime Transcription** — WebRTC streaming, ultra-low latency
-- 🧠 **5 AI Persona Workers** — Parallel, independent, persona-scoped
+- 🧠 **4 AI Persona Workers** — Parallel, independent, persona-scoped
+- 🎬 **Two-Stream Recording** — Save the regular show stream or enhanced sidebar stream
 - 🔀 **Model Router** — OpenAI · OpenRouter · Custom Gateway
 - ✂️ **Clip Studio** — AI-detected moments + Remotion MP4 handoff
 - 🤖 **Agent Ready** — Full `/api/agent/brief` endpoint for home base agent integration

@@ -5,7 +5,7 @@ This app is local-first by default. For hosted deployments, keep secrets in the 
 ## Required
 
 ```bash
-OPENAI_API_KEY=sk-proj-...
+OPENAI_API_KEY=
 BROWSER_KEY_SETUP_DISABLED=true
 ```
 
@@ -26,7 +26,7 @@ OpenRouter:
 
 ```bash
 PERSONA_PROVIDER=openrouter
-OPENROUTER_API_KEY=sk-or-...
+OPENROUTER_API_KEY=
 OPENROUTER_MODEL=openrouter/auto
 ```
 
