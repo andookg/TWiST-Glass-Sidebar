@@ -1,0 +1,21 @@
+{
+  "clipId": "clip-ai-sidebar-demo-1",
+  "title": "AI Sidebar Catches The Moment",
+  "hook": "The sidebar turns a live podcast claim into a ready-to-render social clip.",
+  "transcriptQuote": "One guest claims a new AI audio model can fact-check a podcast in real time while the producer asks for a quick joke about startup demo days.",
+  "reason": "High-signal clip: clear claim, useful AI action, and a visual sidebar payoff.",
+  "tags": ["ai", "podcast", "fact", "clip"],
+  "brollIdeas": [
+    "live waveform with glass captions",
+    "claim-check lower third",
+    "AI sidebar card overlay"
+  ],
+  "captionBeats": [
+    "A guest makes a bold AI claim.",
+    "The sidebar catches the useful moment.",
+    "A render bot can cut the clip."
+  ],
+  "priority": "high",
+  "sourceLabel": "TWiST Glass Sidebar",
+  "accent": "#7fb8d8"
+}

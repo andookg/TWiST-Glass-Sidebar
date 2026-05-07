@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary-accent: #0070F3;
+  --background: #000000;
+  --surface: #111111;
+  --border: #333333;
+  --text-primary: #FFFFFF;
+  --text-secondary: #888888;
+  --success: #0070F3;
+  --warning: #F5A623;
+  --error: #E00000;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--background);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, p {
+  margin: 0;
+}
+
+.heading-1 {
+  font-size: 80px; /* Scaled up for video */
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.heading-2 {
+  font-size: 48px; /* Scaled up for video */
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.body-text {
+  font-size: 28px; /* Scaled up for video */
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.glass-panel {
+  background: rgba(17, 17, 17, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.primary-button {
+  background-color: var(--text-primary);
+  color: var(--background);
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 16px 32px;
+  font-size: 24px;
+  border: none;
+}
