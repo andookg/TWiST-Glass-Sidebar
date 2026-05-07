@@ -138,6 +138,10 @@ footer{border-top:1px solid var(--border);padding:40px 48px;background:var(--sur
 .footer-links{display:flex;gap:24px}
 .footer-links a:hover{color:var(--white);transition:.2s}
 
+/* ANIMATIONS */
+.reveal{opacity:0;transform:translateY(30px);transition:all 0.8s cubic-bezier(0.16,1,0.3,1)}
+.reveal.active{opacity:1;transform:translateY(0)}
+
 /* RESPONSIVE */
 @media(max-width:700px){
   nav{padding:16px 20px}.nav-links{display:none}
@@ -327,8 +331,33 @@ footer{border-top:1px solid var(--border);padding:40px 48px;background:var(--sur
     <a href="https://youtu.be/KMeLNxoGffg" target="_blank">Demo</a>
     <a href="mailto:andres@opcelerate.com">Contact</a>
   </div>
-  <div>MIT License · Open Source · Built for podcasters</div>
+  <div style="text-align:right;line-height:1.4">
+    Built with ❤️ by <a href="https://opcelerate.com" target="_blank" style="color:var(--white);font-weight:600">Andres, Owner of Opcelerate</a><br/>
+    <span style="font-size:12px">A Canadian AI Company</span><br/>
+    <span style="font-size:12px">MIT License · Open Source</span>
+  </div>
 </footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const reveals = document.querySelectorAll('.hero-badge, h1, .hero-sub, .hero-btns, .video-section, .section-label, .section-title, .section-sub, .card, .flow-step, .agent-card, .email-box');
+    reveals.forEach((el, i) => {
+      el.classList.add('reveal');
+      el.style.transitionDelay = `${(i % 5) * 100}ms`; // Stagger effect
+    });
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting) {
+          entry.target.classList.add('active');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+    
+    reveals.forEach(el => observer.observe(el));
+  });
+</script>
 
 </body>
 </html>
