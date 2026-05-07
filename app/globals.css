@@ -1951,7 +1951,26 @@ a {
     linear-gradient(160deg, #fbfcf5, #e7edf0 55%, #f7ecda);
 }
 
+.stage-imagegen-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.46;
+  filter: saturate(0.95) contrast(0.92);
+  transform: scale(1.02);
+}
+
+.stage.has-video .stage-imagegen-art {
+  display: none;
+}
+
 .stage video {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   min-height: clamp(320px, 48vh, 650px);
@@ -1960,6 +1979,8 @@ a {
 }
 
 .audio-visual {
+  position: relative;
+  z-index: 1;
   display: grid;
   width: min(640px, 84%);
   gap: 28px;
@@ -2014,6 +2035,7 @@ a {
 
 .notification-dock {
   position: absolute;
+  z-index: 2;
   right: 18px;
   bottom: 18px;
   display: grid;
@@ -2474,6 +2496,11 @@ a {
       transparent 34px
     ),
     linear-gradient(160deg, #141722, #1d2430 55%, #252219);
+}
+
+[data-theme="dark"] .stage-imagegen-art {
+  opacity: 0.22;
+  filter: saturate(0.72) contrast(0.78) brightness(0.62);
 }
 
 [data-theme="dark"] .pulse-disc {

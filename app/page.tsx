@@ -2507,6 +2507,12 @@ export default function Home() {
           </div>
 
           <div className={`stage ${hasVideo ? "has-video" : ""}`}>
+            <img
+              alt=""
+              aria-hidden="true"
+              className="stage-imagegen-art"
+              src="/imagegen/glass-writers-room.png"
+            />
             {hasVideo ? <video ref={videoRef} autoPlay muted playsInline /> : null}
             {!hasVideo ? (
               <div className="audio-visual">
