@@ -323,6 +323,29 @@ const SAMPLE_LINES = [
   "The demo setup mentions fast local transcription with Parakeet, OpenRouter for LLM routing, local options like Ollama or MLX, embeddings, and an insights panel that reacts while people talk."
 ];
 
+const MIN_PERSONA_ANALYSIS_CHARS = 24;
+
+function buildTranscriptWindow(turns: TranscriptTurn[]) {
+  return turns
+    .filter((turn) => turn.final && turn.text.trim())
+    .slice(-6)
+    .map((turn) => turn.text.trim())
+    .join("\n");
+}
+
+function buildNextTranscriptWindow(
+  currentTurns: TranscriptTurn[],
+  nextTurn: Omit<TranscriptTurn, "createdAt">
+) {
+  const now = new Date().toISOString();
+  const merged = [
+    ...currentTurns.filter((turn) => turn.id !== nextTurn.id),
+    { ...nextTurn, createdAt: now }
+  ];
+
+  return buildTranscriptWindow(orderTranscript(merged).slice(-24));
+}
+
 const AGENT_FLOW_STEPS = [
   { id: "listen", label: "Listen", detail: "audio stream" },
   { id: "transcribe", label: "Transcribe", detail: "rolling memory" },
@@ -419,6 +442,10 @@ export default function Home() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const analyzeTimerRef = useRef<number | null>(null);
+  const analyzeTranscriptRef = useRef<(windowText: string) => void>(() => {});
+  const pendingAnalysisRef = useRef("");
+  const transcriptTurnsRef = useRef<TranscriptTurn[]>([]);
+  const aiMutedRef = useRef(false);
   const lastAnalyzedRef = useRef("");
   const lastAnalyzedAtRef = useRef(0);
   const analyzingRef = useRef(false);
@@ -493,13 +520,15 @@ export default function Home() {
     transcriptTurns.length
   ]);
 
-  const transcriptWindow = useMemo(() => {
-    return transcriptTurns
-      .filter((turn) => turn.final && turn.text.trim())
-      .slice(-6)
-      .map((turn) => turn.text.trim())
-      .join("\n");
+  const transcriptWindow = useMemo(() => buildTranscriptWindow(transcriptTurns), [transcriptTurns]);
+
+  useEffect(() => {
+    transcriptTurnsRef.current = transcriptTurns;
   }, [transcriptTurns]);
+
+  useEffect(() => {
+    aiMutedRef.current = aiMuted;
+  }, [aiMuted]);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("twist-sidebar-theme");
@@ -693,7 +722,12 @@ export default function Home() {
   const analyzeTranscript = useCallback(
     async (windowText: string) => {
       const trimmed = windowText.trim();
-      if (!trimmed || aiMuted || activePersonaIds.length === 0 || analyzingRef.current) {
+      if (!trimmed || aiMuted || activePersonaIds.length === 0) {
+        return;
+      }
+
+      if (analyzingRef.current) {
+        pendingAnalysisRef.current = trimmed;
         return;
       }
 
@@ -737,17 +771,23 @@ export default function Home() {
           ? (payload.cards as PersonaCard[])
           : [];
 
-        if (cards.length > 0) {
-          setPersonaCards((current) => [...cards, ...current].slice(0, 36));
-          setSpeakingPersonaIds(new Set(cards.map((card) => card.persona)));
-          if (projectMemory.autosaveCards) {
-            void saveStorageEvent("persona_cards", {
-              cards,
-              modelRouter: payload?.modelRouter,
-              projectMemory: buildPublicProjectMemory(projectMemory, memoryAttachments),
-              transcriptWindow: trimmed
-            });
-          }
+        if (cards.length === 0) {
+          setErrorMessage(
+            payload?.fallbackReason ??
+              "No persona cards came back for that transcript yet; listening for the next turn."
+          );
+          return;
+        }
+
+        setPersonaCards((current) => [...cards, ...current].slice(0, 36));
+        setSpeakingPersonaIds(new Set(cards.map((card) => card.persona)));
+        if (projectMemory.autosaveCards) {
+          void saveStorageEvent("persona_cards", {
+            cards,
+            modelRouter: payload?.modelRouter,
+            projectMemory: buildPublicProjectMemory(projectMemory, memoryAttachments),
+            transcriptWindow: trimmed
+          });
         }
 
         lastAnalyzedRef.current = trimmed;
@@ -755,9 +795,17 @@ export default function Home() {
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : "Persona analysis failed.");
       } finally {
+        const pending = pendingAnalysisRef.current;
+        pendingAnalysisRef.current = "";
         analyzingRef.current = false;
         setAnalyzing(false);
         window.setTimeout(() => setSpeakingPersonaIds(new Set()), 1800);
+
+        if (pending && pending !== trimmed) {
+          window.setTimeout(() => {
+            void analyzeTranscriptRef.current(pending);
+          }, 250);
+        }
       }
     },
     [
@@ -772,7 +820,11 @@ export default function Home() {
   );
 
   useEffect(() => {
-    if (!transcriptWindow || transcriptWindow.trim().length < 24 || aiMuted) {
+    analyzeTranscriptRef.current = analyzeTranscript;
+  }, [analyzeTranscript]);
+
+  useEffect(() => {
+    if (!transcriptWindow || transcriptWindow.trim().length < MIN_PERSONA_ANALYSIS_CHARS || aiMuted) {
       return;
     }
 
@@ -784,7 +836,7 @@ export default function Home() {
       window.clearTimeout(analyzeTimerRef.current);
     }
 
-    const waitMs = Math.max(450, 2400 - (Date.now() - lastAnalyzedAtRef.current));
+    const waitMs = Math.max(300, 1200 - (Date.now() - lastAnalyzedAtRef.current));
     analyzeTimerRef.current = window.setTimeout(() => {
       void analyzeTranscript(transcriptWindow);
     }, waitMs);
@@ -1382,13 +1434,26 @@ export default function Home() {
     if (type.includes("input_audio_transcription.completed") && itemId) {
       const transcript = String(event.transcript ?? event.text ?? "").trim();
       if (transcript) {
-        upsertTranscript({
+        const nextTurn = {
           id: itemId,
           previousId: getPreviousItemId(event),
           text: transcript,
           draft: "",
           final: true
-        });
+        } satisfies Omit<TranscriptTurn, "createdAt">;
+
+        upsertTranscript(nextTurn);
+
+        const nextWindow = buildNextTranscriptWindow(transcriptTurnsRef.current, nextTurn);
+        if (nextWindow.trim().length >= MIN_PERSONA_ANALYSIS_CHARS && !aiMutedRef.current) {
+          if (analyzeTimerRef.current) {
+            window.clearTimeout(analyzeTimerRef.current);
+          }
+
+          analyzeTimerRef.current = window.setTimeout(() => {
+            void analyzeTranscriptRef.current(nextWindow);
+          }, 250);
+        }
       }
       setSpeechActive(false);
       return;
