@@ -17,6 +17,7 @@ const APP_HOST = new URL(APP_URL).hostname;
 const APP_PORT = Number(new URL(APP_URL).port || "3000");
 const ROOT_DIR = path.join(__dirname, "..");
 const isMac = process.platform === "darwin";
+const shouldOpenSystemSettings = process.env.TWIST_OPEN_SYSTEM_SETTINGS_ON_DENIED === "1";
 
 let mainWindow = null;
 let nextServer = null;
@@ -85,14 +86,14 @@ async function requestMacMediaPermissions() {
   await systemPreferences.askForMediaAccess("microphone").catch(() => false);
 
   const micStatus = systemPreferences.getMediaAccessStatus("microphone");
-  if (micStatus === "denied" || micStatus === "restricted") {
+  if (shouldOpenSystemSettings && (micStatus === "denied" || micStatus === "restricted")) {
     await shell.openExternal(
       "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
     );
   }
 
   const screenStatus = systemPreferences.getMediaAccessStatus("screen");
-  if (screenStatus === "denied" || screenStatus === "restricted") {
+  if (shouldOpenSystemSettings && (screenStatus === "denied" || screenStatus === "restricted")) {
     await shell.openExternal(
       "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
     );
