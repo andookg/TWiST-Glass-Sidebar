@@ -326,6 +326,9 @@ const SAMPLE_LINES = [
 
 const MIN_PERSONA_ANALYSIS_CHARS = 24;
 const LIVE_DRAFT_FINALIZE_MS = 1400;
+const FALLBACK_TRANSCRIBE_CHUNK_MS = 5000;
+const FALLBACK_REALTIME_GRACE_MS = 6500;
+const FALLBACK_MIN_AUDIO_BYTES = 1800;
 
 function buildTranscriptWindow(turns: TranscriptTurn[]) {
   return turns
@@ -346,6 +349,27 @@ function buildNextTranscriptWindow(
   ];
 
   return buildTranscriptWindow(orderTranscript(merged).slice(-24));
+}
+
+function pickFallbackAudioMimeType() {
+  if (typeof MediaRecorder === "undefined") {
+    return "";
+  }
+
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/mp4",
+    "audio/ogg;codecs=opus"
+  ];
+
+  return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) ?? "";
+}
+
+function fallbackAudioExtension(mimeType: string) {
+  if (mimeType.includes("mp4")) return "m4a";
+  if (mimeType.includes("ogg")) return "ogg";
+  return "webm";
 }
 
 const AGENT_FLOW_STEPS = [
@@ -443,6 +467,7 @@ export default function Home() {
   const meterFrameRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const audioLevelRef = useRef(0);
   const analyzeTimerRef = useRef<number | null>(null);
   const analyzeTranscriptRef = useRef<(windowText: string) => void>(() => {});
   const pendingAnalysisRef = useRef("");
@@ -455,6 +480,12 @@ export default function Home() {
   const draftFinalizeTimersRef = useRef<Map<string, number>>(new Map());
   const latestDraftTextRef = useRef<Map<string, string>>(new Map());
   const draftPreviousIdRef = useRef<Map<string, string | null>>(new Map());
+  const fallbackRecorderRef = useRef<MediaRecorder | null>(null);
+  const fallbackStartedAtRef = useRef(0);
+  const fallbackRealtimeActivityAtRef = useRef(0);
+  const fallbackTranscriptAtRef = useRef(0);
+  const fallbackTranscribingRef = useRef(false);
+  const fallbackLastTextRef = useRef("");
 
   const hasFinalTranscript = transcriptTurns.some(
     (turn) => turn.final && turn.text.trim().length > 0
@@ -892,6 +923,7 @@ export default function Home() {
       channelRef.current?.close();
       peerRef.current?.close();
       streamRef.current?.getTracks().forEach((track) => track.stop());
+      stopFallbackTranscription();
       stopCaptureMix();
       stopMeter();
     };
@@ -928,6 +960,7 @@ export default function Home() {
       streamRef.current = stream;
       startMeter(stream);
       await connectRealtime(stream);
+      startFallbackTranscription(stream);
       setStatus("listening");
     };
 
@@ -1473,17 +1506,20 @@ export default function Home() {
     const itemId = getEventItemId(event);
 
     if (type === "input_audio_buffer.speech_started") {
+      fallbackRealtimeActivityAtRef.current = Date.now();
       setSpeechActive(true);
       return;
     }
 
     if (type === "input_audio_buffer.speech_stopped") {
+      fallbackRealtimeActivityAtRef.current = Date.now();
       setSpeechActive(false);
       finalizeDraftTurns(450);
       return;
     }
 
     if (type === "input_audio_buffer.committed" && itemId) {
+      fallbackRealtimeActivityAtRef.current = Date.now();
       draftPreviousIdRef.current.set(itemId, getPreviousItemId(event));
       upsertTranscript({
         id: itemId,
@@ -1496,6 +1532,7 @@ export default function Home() {
     }
 
     if (type.includes("input_audio_transcription.delta") && itemId) {
+      fallbackRealtimeActivityAtRef.current = Date.now();
       const delta = String(event.delta ?? "");
       if (delta) {
         appendTranscriptDraft(itemId, delta, getPreviousItemId(event));
@@ -1504,9 +1541,11 @@ export default function Home() {
     }
 
     if (type.includes("input_audio_transcription.completed") && itemId) {
+      fallbackRealtimeActivityAtRef.current = Date.now();
       clearDraftFinalizer(itemId);
       const transcript = String(event.transcript ?? event.text ?? latestDraftTextRef.current.get(itemId) ?? "").trim();
       if (transcript) {
+        fallbackTranscriptAtRef.current = Date.now();
         const nextTurn = {
           id: itemId,
           previousId: getPreviousItemId(event),
@@ -2796,6 +2835,138 @@ export default function Home() {
     </main>
   );
 
+  function startFallbackTranscription(stream: MediaStream) {
+    stopFallbackTranscription();
+
+    if (typeof MediaRecorder === "undefined") {
+      return;
+    }
+
+    const audioTracks = stream.getAudioTracks();
+    if (audioTracks.length === 0) {
+      return;
+    }
+
+    const mimeType = pickFallbackAudioMimeType();
+    const audioOnlyStream = new MediaStream(audioTracks);
+    let recorder: MediaRecorder;
+
+    try {
+      recorder = new MediaRecorder(audioOnlyStream, mimeType ? { mimeType } : undefined);
+    } catch {
+      return;
+    }
+
+    fallbackStartedAtRef.current = Date.now();
+    fallbackRealtimeActivityAtRef.current = Date.now();
+    fallbackTranscriptAtRef.current = 0;
+
+    recorder.addEventListener("dataavailable", (event) => {
+      if (!event.data || event.data.size < FALLBACK_MIN_AUDIO_BYTES) {
+        return;
+      }
+
+      if (!shouldUseFallbackTranscription()) {
+        return;
+      }
+
+      void transcribeFallbackAudio(event.data);
+    });
+
+    recorder.addEventListener("error", () => {
+      stopFallbackTranscription();
+    });
+
+    fallbackRecorderRef.current = recorder;
+    recorder.start(FALLBACK_TRANSCRIBE_CHUNK_MS);
+  }
+
+  function shouldUseFallbackTranscription() {
+    const now = Date.now();
+    if (now - fallbackStartedAtRef.current < FALLBACK_REALTIME_GRACE_MS) {
+      return false;
+    }
+
+    if (now - fallbackTranscriptAtRef.current < FALLBACK_REALTIME_GRACE_MS) {
+      return false;
+    }
+
+    if (now - fallbackRealtimeActivityAtRef.current < FALLBACK_REALTIME_GRACE_MS) {
+      return false;
+    }
+
+    return audioLevelRef.current >= 2;
+  }
+
+  async function transcribeFallbackAudio(blob: Blob) {
+    if (fallbackTranscribingRef.current) {
+      return;
+    }
+
+    fallbackTranscribingRef.current = true;
+    try {
+      const file = new File([blob], `fallback-${Date.now()}.${fallbackAudioExtension(blob.type)}`, {
+        type: blob.type || "audio/webm"
+      });
+      const form = new FormData();
+      form.append("audio", file);
+
+      const response = await fetch("/api/audio/transcribe", {
+        method: "POST",
+        body: form
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setErrorMessage(payload?.error ?? "Fallback transcription failed.");
+        return;
+      }
+
+      const text = String(payload?.text ?? "").replace(/\s+/g, " ").trim();
+      if (!text || text.length < 2) {
+        return;
+      }
+
+      const normalized = text.toLowerCase();
+      if (fallbackLastTextRef.current === normalized) {
+        return;
+      }
+
+      fallbackLastTextRef.current = normalized;
+      fallbackTranscriptAtRef.current = Date.now();
+      const nextTurn = {
+        id: `fallback-${fallbackTranscriptAtRef.current}`,
+        previousId: transcriptTurnsRef.current.at(-1)?.id ?? null,
+        text,
+        draft: "",
+        final: true
+      } satisfies Omit<TranscriptTurn, "createdAt">;
+
+      upsertTranscript(nextTurn);
+      queueTranscriptAnalysis(buildNextTranscriptWindow(transcriptTurnsRef.current, nextTurn), 250);
+      setErrorMessage("");
+    } catch {
+      setErrorMessage("Fallback transcription failed.");
+    } finally {
+      fallbackTranscribingRef.current = false;
+    }
+  }
+
+  function stopFallbackTranscription() {
+    const recorder = fallbackRecorderRef.current;
+    fallbackRecorderRef.current = null;
+
+    if (recorder && recorder.state !== "inactive") {
+      try {
+        recorder.stop();
+      } catch {
+        // Recorder may already be stopping; no user-visible action needed.
+      }
+    }
+
+    fallbackTranscribingRef.current = false;
+  }
+
   async function connectRealtime(stream: MediaStream) {
     const tokenResponse = await fetch("/api/realtime/session", {
       method: "POST"
@@ -3031,7 +3202,9 @@ export default function Home() {
         sum += centered * centered;
       }
       const rms = Math.sqrt(sum / samples.length);
-      setAudioLevel(Math.min(100, Math.round((rms / 64) * 100)));
+      const nextLevel = Math.min(100, Math.round((rms / 64) * 100));
+      audioLevelRef.current = nextLevel;
+      setAudioLevel(nextLevel);
       meterFrameRef.current = window.requestAnimationFrame(tick);
     };
 
@@ -3047,6 +3220,7 @@ export default function Home() {
     peerRef.current?.close();
     streamRef.current?.getTracks().forEach((track) => track.stop());
     clearDraftFinalizers();
+    stopFallbackTranscription();
     stopCaptureMix();
     stopMeter();
 
@@ -3054,6 +3228,7 @@ export default function Home() {
     peerRef.current = null;
     streamRef.current = null;
     setSpeechActive(false);
+    audioLevelRef.current = 0;
     setAudioLevel(0);
     setStatus(nextStatus);
   }

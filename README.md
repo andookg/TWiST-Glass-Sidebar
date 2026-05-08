@@ -138,6 +138,7 @@ OPENAI_API_KEY=
 
 # Optional – model overrides
 OPENAI_TRANSCRIBE_MODEL=gpt-realtime-whisper
+OPENAI_FALLBACK_TRANSCRIBE_MODEL=gpt-4o-transcribe
 OPENAI_PERSONA_MODEL=gpt-4o
 OPENAI_REALTIME_MODEL=gpt-realtime-2
 
