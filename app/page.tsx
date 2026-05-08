@@ -325,6 +325,7 @@ const SAMPLE_LINES = [
 ];
 
 const MIN_PERSONA_ANALYSIS_CHARS = 24;
+const LIVE_DRAFT_FINALIZE_MS = 1400;
 
 function buildTranscriptWindow(turns: TranscriptTurn[]) {
   return turns
@@ -451,10 +452,19 @@ export default function Home() {
   const lastAnalyzedAtRef = useRef(0);
   const analyzingRef = useRef(false);
   const sampleIndexRef = useRef(0);
+  const draftFinalizeTimersRef = useRef<Map<string, number>>(new Map());
+  const latestDraftTextRef = useRef<Map<string, string>>(new Map());
+  const draftPreviousIdRef = useRef<Map<string, string | null>>(new Map());
 
   const hasFinalTranscript = transcriptTurns.some(
     (turn) => turn.final && turn.text.trim().length > 0
   );
+  const hasTranscriptContent = transcriptTurns.some(
+    (turn) => (turn.text || turn.draft).trim().length > 0
+  );
+  const visibleTurnCount = transcriptTurns.filter(
+    (turn) => (turn.text || turn.draft).trim().length > 0
+  ).length;
 
   const latestCardsByPersona = useMemo(() => {
     const map = new Map<PersonaId, PersonaCard>();
@@ -536,6 +546,12 @@ export default function Home() {
   useEffect(() => {
     aiMutedRef.current = aiMuted;
   }, [aiMuted]);
+
+  useEffect(() => {
+    return () => {
+      clearDraftFinalizers();
+    };
+  }, []);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("twist-sidebar-theme");
@@ -1000,6 +1016,7 @@ export default function Home() {
   }, [captureErrorKind, captureMode]);
 
   const clearTranscript = () => {
+    clearDraftFinalizers();
     setTranscriptTurns([]);
     setPersonaCards([]);
     setClipSuggestions([]);
@@ -1462,10 +1479,12 @@ export default function Home() {
 
     if (type === "input_audio_buffer.speech_stopped") {
       setSpeechActive(false);
+      finalizeDraftTurns(450);
       return;
     }
 
     if (type === "input_audio_buffer.committed" && itemId) {
+      draftPreviousIdRef.current.set(itemId, getPreviousItemId(event));
       upsertTranscript({
         id: itemId,
         previousId: getPreviousItemId(event),
@@ -1479,13 +1498,14 @@ export default function Home() {
     if (type.includes("input_audio_transcription.delta") && itemId) {
       const delta = String(event.delta ?? "");
       if (delta) {
-        appendTranscriptDraft(itemId, delta);
+        appendTranscriptDraft(itemId, delta, getPreviousItemId(event));
       }
       return;
     }
 
     if (type.includes("input_audio_transcription.completed") && itemId) {
-      const transcript = String(event.transcript ?? event.text ?? "").trim();
+      clearDraftFinalizer(itemId);
+      const transcript = String(event.transcript ?? event.text ?? latestDraftTextRef.current.get(itemId) ?? "").trim();
       if (transcript) {
         const nextTurn = {
           id: itemId,
@@ -1496,17 +1516,11 @@ export default function Home() {
         } satisfies Omit<TranscriptTurn, "createdAt">;
 
         upsertTranscript(nextTurn);
+        latestDraftTextRef.current.delete(itemId);
+        draftPreviousIdRef.current.delete(itemId);
 
         const nextWindow = buildNextTranscriptWindow(transcriptTurnsRef.current, nextTurn);
-        if (nextWindow.trim().length >= MIN_PERSONA_ANALYSIS_CHARS && !aiMutedRef.current) {
-          if (analyzeTimerRef.current) {
-            window.clearTimeout(analyzeTimerRef.current);
-          }
-
-          analyzeTimerRef.current = window.setTimeout(() => {
-            void analyzeTranscriptRef.current(nextWindow);
-          }, 250);
-        }
+        queueTranscriptAnalysis(nextWindow, 250);
       }
       setSpeechActive(false);
       return;
@@ -2612,7 +2626,7 @@ export default function Home() {
             </div>
             <div className="inline-stat">
               <Captions size={17} />
-              <span>{transcriptTurns.filter((turn) => turn.final).length} turns</span>
+              <span>{visibleTurnCount} turns</span>
             </div>
           </div>
 
@@ -2675,7 +2689,7 @@ export default function Home() {
             <div className="panel-title">
               <div>
                 <p>Live transcript</p>
-                <h3>{hasFinalTranscript ? "Rolling show memory" : "Waiting for speech"}</h3>
+                <h3>{hasTranscriptContent ? "Rolling show memory" : "Waiting for speech"}</h3>
               </div>
               <button
                 className="mini-button"
@@ -2883,10 +2897,88 @@ export default function Home() {
     });
   }
 
-  function appendTranscriptDraft(itemId: string, delta: string) {
+  function queueTranscriptAnalysis(windowText: string, delayMs = 250) {
+    const trimmed = windowText.trim();
+    if (trimmed.length < MIN_PERSONA_ANALYSIS_CHARS || aiMutedRef.current) {
+      return;
+    }
+
+    if (analyzeTimerRef.current) {
+      window.clearTimeout(analyzeTimerRef.current);
+    }
+
+    analyzeTimerRef.current = window.setTimeout(() => {
+      void analyzeTranscriptRef.current(trimmed);
+    }, delayMs);
+  }
+
+  function clearDraftFinalizer(itemId: string) {
+    const timer = draftFinalizeTimersRef.current.get(itemId);
+    if (timer) {
+      window.clearTimeout(timer);
+    }
+    draftFinalizeTimersRef.current.delete(itemId);
+  }
+
+  function clearDraftFinalizers() {
+    for (const timer of draftFinalizeTimersRef.current.values()) {
+      window.clearTimeout(timer);
+    }
+    draftFinalizeTimersRef.current.clear();
+    latestDraftTextRef.current.clear();
+    draftPreviousIdRef.current.clear();
+  }
+
+  function scheduleDraftFinalization(itemId: string, delayMs = LIVE_DRAFT_FINALIZE_MS) {
+    clearDraftFinalizer(itemId);
+    const timer = window.setTimeout(() => {
+      draftFinalizeTimersRef.current.delete(itemId);
+      promoteDraftTurn(itemId);
+    }, delayMs);
+    draftFinalizeTimersRef.current.set(itemId, timer);
+  }
+
+  function finalizeDraftTurns(delayMs = 0) {
+    for (const itemId of latestDraftTextRef.current.keys()) {
+      scheduleDraftFinalization(itemId, delayMs);
+    }
+  }
+
+  function promoteDraftTurn(itemId: string) {
+    const draft = (latestDraftTextRef.current.get(itemId) ?? "")
+      .replace(/^Listening\.\.\./, "")
+      .trim();
+
+    if (!draft) {
+      latestDraftTextRef.current.delete(itemId);
+      draftPreviousIdRef.current.delete(itemId);
+      return;
+    }
+
+    const nextTurn = {
+      id: itemId,
+      previousId: draftPreviousIdRef.current.get(itemId) ?? null,
+      text: draft,
+      draft: "",
+      final: true
+    } satisfies Omit<TranscriptTurn, "createdAt">;
+
+    latestDraftTextRef.current.delete(itemId);
+    draftPreviousIdRef.current.delete(itemId);
+    upsertTranscript(nextTurn);
+    queueTranscriptAnalysis(buildNextTranscriptWindow(transcriptTurnsRef.current, nextTurn), 250);
+  }
+
+  function appendTranscriptDraft(itemId: string, delta: string, previousId: string | null = null) {
+    if (previousId !== null) {
+      draftPreviousIdRef.current.set(itemId, previousId);
+    }
+
     setTranscriptTurns((current) => {
       const existing = current.find((turn) => turn.id === itemId);
       if (!existing) {
+        latestDraftTextRef.current.set(itemId, delta);
+        scheduleDraftFinalization(itemId);
         return [
           ...current,
           {
@@ -2900,8 +2992,12 @@ export default function Home() {
         ];
       }
 
+      const nextDraft = existing.draft === "Listening..." ? delta : `${existing.draft}${delta}`;
+      latestDraftTextRef.current.set(itemId, nextDraft);
+      scheduleDraftFinalization(itemId);
+
       return current.map((turn) =>
-        turn.id === itemId ? { ...turn, draft: `${turn.draft}${delta}` } : turn
+        turn.id === itemId ? { ...turn, draft: nextDraft } : turn
       );
     });
   }
@@ -2950,6 +3046,7 @@ export default function Home() {
     channelRef.current?.close();
     peerRef.current?.close();
     streamRef.current?.getTracks().forEach((track) => track.stop());
+    clearDraftFinalizers();
     stopCaptureMix();
     stopMeter();
 
