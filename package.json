@@ -2,6 +2,7 @@
   "name": "twist-glass-sidebar",
   "version": "0.1.0",
   "private": false,
+  "author": "Andres G",
   "description": "Open-source live podcast sidebar with OpenAI Realtime transcription, four AI persona cards, two-stream recording, project memory, and agent handoffs.",
   "license": "MIT",
   "repository": {
@@ -20,7 +21,8 @@
     "setup": "node scripts/setup-local.mjs",
     "activate": "node scripts/activate.mjs",
     "desktop": "electron desktop/main.cjs",
-    "desktop:pack": "npm run build && electron-builder --mac dir",
+    "desktop:assets": "node scripts/create-desktop-assets.mjs",
+    "desktop:pack": "npm run desktop:assets && npm run build && electron-builder --mac dmg dir",
     "dev": "next dev",
     "dev:local": "next dev --hostname 127.0.0.1",
     "build": "next build",
@@ -44,6 +46,7 @@
     "@types/react-dom": "^19.0.3",
     "electron": "^42.0.0",
     "electron-builder": "^26.8.1",
+    "sharp": "^0.34.5",
     "typescript": "^5.7.3"
   },
   "build": {
@@ -66,7 +69,9 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
       "target": [
+        "dmg",
         "dir"
       ],
       "hardenedRuntime": true,
@@ -76,6 +81,29 @@
         "NSCameraUsageDescription": "TWiST Glass Sidebar can access camera/video sources if you choose to share them for capture.",
         "NSScreenCaptureUsageDescription": "TWiST Glass Sidebar captures a selected screen, window, or tab so it can transcribe podcast audio and record the enhanced stream."
       }
+    },
+    "dmg": {
+      "title": "TWiST Glass Sidebar",
+      "icon": "build/icon.icns",
+      "background": "build/dmg-background.png",
+      "iconSize": 96,
+      "window": {
+        "width": 660,
+        "height": 420
+      },
+      "contents": [
+        {
+          "x": 164,
+          "y": 214,
+          "type": "file"
+        },
+        {
+          "x": 496,
+          "y": 214,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     }
   }
 }
