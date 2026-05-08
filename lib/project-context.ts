@@ -8,6 +8,8 @@ export const PROJECT_CONTEXT = {
     "OpenAI Realtime voice-session endpoint for speech-to-speech agents",
     "OpenAI Realtime translation endpoint for multilingual voice agents",
     "model-routed persona cards through OpenAI, OpenRouter, or a custom OpenAI-compatible gateway",
+    "claim signal analysis for named entities, numbers, sourceable assertions, and weak-window suppression",
+    "source-tier policy that prefers primary/credible citations and blocks low-trust citation domains",
     "local browser key setup that stores runtime secrets outside browser storage",
     "Prompt Studio for show context, writer direction, tone, guardrails, and per-persona tuning",
     "Project Memory for each downloaded instance",

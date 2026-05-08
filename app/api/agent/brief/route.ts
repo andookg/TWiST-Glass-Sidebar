@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { SOURCE_POLICY_SUMMARY } from "@/lib/claim-intelligence";
 import { CLIP_SUGGESTION_SCHEMA, REMOTION_PROPS_SCHEMA } from "@/lib/clips";
 import { readMemoryStash, summarizeMemoryAttachments } from "@/lib/memory-stash";
 import { getModelRouteSummaries } from "@/lib/model-router";
@@ -53,6 +54,11 @@ export async function GET(request: Request) {
       "Use /api/agent/clip-handoff to convert clip suggestions into Remotion render actions.",
       "Never ask the browser for secrets; use server-side routes and redacted status only."
     ],
+    intelligencePolicy: {
+      claimSignal:
+        "Persona analysis now receives a lightweight claim signal: primary entity, claim type, key numbers, searchable terms, confidence, and why the window is or is not sourceable.",
+      sourcePolicy: SOURCE_POLICY_SUMMARY
+    },
     personas: PERSONAS.map((persona) => ({
       id: persona.id,
       role: persona.role,
@@ -125,6 +131,10 @@ function toMarkdown(brief: {
     totalBytes: number;
     attachedSummary: string;
   };
+  intelligencePolicy?: {
+    claimSignal: string;
+    sourcePolicy: typeof SOURCE_POLICY_SUMMARY;
+  };
 }) {
   return [
     `# ${brief.project.name} Agent Brief`,
@@ -142,6 +152,10 @@ function toMarkdown(brief: {
     "## Attached Memory",
     `Files: ${brief.memory.totalFiles}`,
     `Bytes: ${brief.memory.totalBytes}`,
-    brief.memory.attachedSummary || "No attached memory yet."
+    brief.memory.attachedSummary || "No attached memory yet.",
+    "",
+    "## Intelligence Policy",
+    brief.intelligencePolicy?.claimSignal ?? "Claim signal not available.",
+    ...(brief.intelligencePolicy?.sourcePolicy.rules.map((rule) => `- ${rule}`) ?? [])
   ].join("\n");
 }

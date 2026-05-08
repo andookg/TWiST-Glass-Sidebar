@@ -1,3 +1,5 @@
+import type { ClaimSignal } from "./claim-intelligence";
+
 export const PERSONAS = [
   {
     id: "fact-checker",
@@ -124,7 +126,8 @@ export function personaTypeFor(id: PersonaId): PersonaCard["type"] {
 export function createFallbackCards(
   transcriptWindow: string,
   activePersonas: PersonaId[],
-  fallbackSources?: PersonaCard["sources"]
+  fallbackSources?: PersonaCard["sources"],
+  claimSignal?: ClaimSignal
 ): PersonaCard[] {
   const trimmed = transcriptWindow.trim();
   if (!trimmed) {
@@ -146,7 +149,7 @@ export function createFallbackCards(
 
   return activePersonas.slice(0, 4).map((personaId, index) => {
     const type = personaTypeFor(personaId);
-    const text = fallbackText(type, topic);
+    const text = fallbackText(type, topic, claimSignal);
 
     return {
       id: `fallback-${personaId}-${Date.now()}-${index}`,
@@ -173,14 +176,23 @@ function summarizeTopic(transcriptWindow: string) {
   return words.slice(Math.max(0, words.length - 14)).join(" ");
 }
 
-function fallbackText(type: PersonaCard["type"], topic: string) {
+function fallbackText(type: PersonaCard["type"], topic: string, claimSignal?: ClaimSignal) {
+  const entity = claimSignal?.primaryEntity || topic;
+  const numbers = claimSignal?.keyNumbers.length ? ` (${claimSignal.keyNumbers.slice(0, 2).join(", ")})` : "";
+
   switch (type) {
     case "fact":
-      return `Fact check queue: verify the strongest claim around "${topic}" before it becomes the show's accepted version.`;
+      if (claimSignal?.isLikelyClaim) {
+        return `Fact-check cue: verify ${entity}${numbers} with a Tier 1 or Tier 2 source before the claim becomes the show's accepted version.`;
+      }
+      return `Fact-check cue: no strong named claim yet. Wait for a company, person, number, or dated assertion before checking.`;
     case "comedy":
       return `Tag: "${topic}" sounds like a meeting that should have been a two-second sound effect.`;
     case "news":
-      return `News desk: look for a current headline connected to "${topic}" and cite it before calling it breaking.`;
+      if (claimSignal?.isLikelyClaim) {
+        return `News cue: look for recent coverage on ${entity}${numbers}, cite it, and call out what the source does not confirm.`;
+      }
+      return `News cue: hold for a sharper topic or named entity before calling anything current.`;
     case "cynic":
       return `Cynic note: bold confidence detected around "${topic}"; reality may want a word.`;
   }

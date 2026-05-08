@@ -59,6 +59,7 @@ OPENAI_API_KEY=
 - 🎙️ **Browser Audio Capture** — Tab, Mic, or Both, simultaneously
 - ⚡ **OpenAI Realtime Transcription** — WebRTC streaming, ultra-low latency
 - 🧠 **4 AI Persona Workers** — Parallel, independent, persona-scoped
+- 🔎 **Claim Intelligence** — Detects sourceable claims, key numbers, and citation quality
 - 🎬 **Two-Stream Recording** — Save the regular show stream or enhanced sidebar stream
 - 🔀 **Model Router** — OpenAI · OpenRouter · Custom Gateway
 - ✂️ **Clip Studio** — AI-detected moments + Remotion MP4 handoff
@@ -168,6 +169,7 @@ npx remotion render src/index.ts ClipSuggestion out/sample.mp4 --props src/sampl
 
 - API keys **never** leave your server
 - No data stored without your explicit permission
+- Fact/news cards prefer high-trust sources and filter low-quality citation domains
 - `.data/`, `.env*`, and `node_modules/` are gitignored by default
 
 Read [SECURITY.md](./SECURITY.md) before deploying.

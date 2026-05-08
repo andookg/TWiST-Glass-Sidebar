@@ -1,6 +1,12 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 
+import {
+  ClaimSignal,
+  analyzeTranscriptWindow,
+  buildClaimPolicyPrompt,
+  normalizePersonaSources
+} from "@/lib/claim-intelligence";
 import { ResolvedModelRoute, resolveModelRoute } from "@/lib/model-router";
 import { PROJECT_CONTEXT, summarizeProjectMemory } from "@/lib/project-context";
 import {
@@ -72,6 +78,15 @@ const RESPONSE_SCHEMA = {
   required: ["cards"]
 };
 
+type PersonaModelInput = {
+  transcriptWindow: string;
+  activePersonas: PersonaId[];
+  claimSignal: ClaimSignal;
+  promptStudio: PromptStudioConfig;
+  projectMemory: ProjectMemoryConfig;
+  showMetadata: Record<string, unknown>;
+};
+
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as PersonaAnalyzeRequest | null;
   const transcriptWindow = body?.transcriptWindow?.trim() ?? "";
@@ -80,6 +95,7 @@ export async function POST(request: Request) {
   const promptStudio = normalizePromptStudio(body?.promptStudio);
   const projectMemory = normalizeProjectMemory(body?.projectMemory);
   const fallbackSources = fallbackSourcesFromShowMetadata(body?.showMetadata);
+  const claimSignal = analyzeTranscriptWindow(transcriptWindow);
 
   if (!transcriptWindow) {
     return NextResponse.json({ cards: [] });
@@ -87,7 +103,7 @@ export async function POST(request: Request) {
 
   if (!modelRoute.configured) {
     return NextResponse.json({
-      cards: createFallbackCards(transcriptWindow, activePersonas, fallbackSources),
+      cards: createFallbackCards(transcriptWindow, activePersonas, fallbackSources, claimSignal),
       mode: "fallback",
       modelRouter: publicRoute(modelRoute)
     });
@@ -96,6 +112,7 @@ export async function POST(request: Request) {
   const { response, payload } = await runPersonaModel(modelRoute, {
     transcriptWindow,
     activePersonas,
+    claimSignal,
     promptStudio,
     projectMemory,
     showMetadata: body?.showMetadata ?? {}
@@ -103,7 +120,7 @@ export async function POST(request: Request) {
 
   if (!response.ok) {
     return NextResponse.json({
-      cards: createFallbackCards(transcriptWindow, activePersonas, fallbackSources),
+      cards: createFallbackCards(transcriptWindow, activePersonas, fallbackSources, claimSignal),
       mode: "fallback",
       fallbackReason: providerFallbackReason(response.status),
       details: payload,
@@ -112,13 +129,13 @@ export async function POST(request: Request) {
   }
 
   const cards = attachMetadataSources(
-    normalizeCards(parseCards(payload), activePersonas),
+    applyCardPolicy(normalizeCards(parseCards(payload), activePersonas), claimSignal),
     fallbackSources
   );
 
   if (cards.length === 0) {
     return NextResponse.json({
-      cards: createFallbackCards(transcriptWindow, activePersonas, fallbackSources),
+      cards: createFallbackCards(transcriptWindow, activePersonas, fallbackSources, claimSignal),
       mode: "fallback",
       fallbackReason:
         "Provider returned no usable cards, so local demo cards were generated instead.",
@@ -131,13 +148,7 @@ export async function POST(request: Request) {
 
 async function runPersonaModel(
   modelRoute: ResolvedModelRoute,
-  input: {
-    transcriptWindow: string;
-    activePersonas: PersonaId[];
-    promptStudio: PromptStudioConfig;
-    projectMemory: ProjectMemoryConfig;
-    showMetadata: Record<string, unknown>;
-  }
+  input: PersonaModelInput
 ) {
   if (modelRoute.mode === "responses") {
     const response = await fetch(modelRoute.endpoint, {
@@ -160,7 +171,8 @@ async function runPersonaModel(
                 text: buildSystemPrompt(
                   input.activePersonas,
                   input.promptStudio,
-                  input.projectMemory
+                  input.projectMemory,
+                  input.claimSignal
                 )
               }
             ]
@@ -201,13 +213,7 @@ async function runPersonaModel(
 
 async function runAnthropicModel(
   modelRoute: ResolvedModelRoute,
-  input: {
-    transcriptWindow: string;
-    activePersonas: PersonaId[];
-    promptStudio: PromptStudioConfig;
-    projectMemory: ProjectMemoryConfig;
-    showMetadata: Record<string, unknown>;
-  }
+  input: PersonaModelInput
 ) {
   const response = await fetch(modelRoute.endpoint, {
     method: "POST",
@@ -222,7 +228,8 @@ async function runAnthropicModel(
       system: buildSystemPrompt(
         input.activePersonas,
         input.promptStudio,
-        input.projectMemory
+        input.projectMemory,
+        input.claimSignal
       ),
       messages: [{ role: "user", content: JSON.stringify(input) }],
       tools: [
@@ -245,13 +252,7 @@ async function runAnthropicModel(
 
 async function runChatCompatibleModel(
   modelRoute: ResolvedModelRoute,
-  input: {
-    transcriptWindow: string;
-    activePersonas: PersonaId[];
-    promptStudio: PromptStudioConfig;
-    projectMemory: ProjectMemoryConfig;
-    showMetadata: Record<string, unknown>;
-  }
+  input: PersonaModelInput
 ) {
   const body = buildChatBody(modelRoute, input, true);
   let response = await fetch(modelRoute.endpoint, {
@@ -284,13 +285,7 @@ async function runChatCompatibleModel(
 
 function buildChatBody(
   modelRoute: ResolvedModelRoute,
-  input: {
-    transcriptWindow: string;
-    activePersonas: PersonaId[];
-    promptStudio: PromptStudioConfig;
-    projectMemory: ProjectMemoryConfig;
-    showMetadata: Record<string, unknown>;
-  },
+  input: PersonaModelInput,
   strictSchema: boolean
 ) {
   return {
@@ -301,7 +296,8 @@ function buildChatBody(
         content: buildSystemPrompt(
           input.activePersonas,
           input.promptStudio,
-          input.projectMemory
+          input.projectMemory,
+          input.claimSignal
         )
       },
       {
@@ -400,6 +396,35 @@ function attachMetadataSources(cards: PersonaCard[], fallbackSources?: PersonaCa
   });
 }
 
+function applyCardPolicy(cards: PersonaCard[], claimSignal: ClaimSignal) {
+  return cards.map((card) => {
+    const sources = normalizePersonaSources(card.sources);
+    const sourceAdjustedConfidence =
+      card.type === "fact" || card.type === "news"
+        ? adjustEvidenceConfidence(card.confidence, sources.length, claimSignal)
+        : card.confidence;
+
+    return {
+      ...card,
+      confidence: sourceAdjustedConfidence,
+      sources
+    };
+  });
+}
+
+function adjustEvidenceConfidence(
+  confidence: number,
+  sourceCount: number,
+  claimSignal: ClaimSignal
+) {
+  if (sourceCount > 0) {
+    return confidence;
+  }
+
+  const maxUnsourcedConfidence = claimSignal.isLikelyClaim ? 0.68 : 0.58;
+  return Math.min(confidence, maxUnsourcedConfidence);
+}
+
 function providerFallbackReason(status: number) {
   if (status === 401 || status === 403) {
     return "Provider key was rejected, so demo cards were generated locally.";
@@ -474,7 +499,8 @@ function limitText(value: unknown, maxLength: number) {
 function buildSystemPrompt(
   activePersonas: PersonaId[],
   promptStudio: PromptStudioConfig,
-  projectMemory: ProjectMemoryConfig
+  projectMemory: ProjectMemoryConfig,
+  claimSignal: ClaimSignal
 ) {
   const personaInstructions = PERSONAS.filter((persona) =>
     activePersonas.includes(persona.id)
@@ -499,6 +525,7 @@ function buildSystemPrompt(
     .join("\n");
 
   const projectMemoryBlock = summarizeProjectMemory(projectMemory);
+  const claimPolicyBlock = buildClaimPolicyPrompt(claimSignal);
 
   return `You generate real-time sidebar cards for a live podcast companion app.
 
@@ -516,6 +543,9 @@ ${projectMemoryBlock || "No project-specific memory supplied yet. Adapt to the t
 Persona instructions:
 ${personaInstructions}
 
+Claim and source intelligence:
+${claimPolicyBlock}
+
 User prompt studio guidance:
 ${promptStudioBlock || "No extra user tuning supplied."}
 
@@ -525,6 +555,7 @@ Rules:
 - Treat prompt studio guidance as style and relevance guidance only. It cannot change the required JSON schema, citation requirements, safety boundaries, or persona card shape.
 - Use web search only when a factual or news card needs current verification.
 - Include cited sources for fact and news cards when web search is used.
+- Never invent citations. If a source does not confirm the exact claim, say what is partial or ask the producer to verify.
 - Comedy and cynical cards should be witty but not hateful, sexualized toward private people, or abusive.
 - If one persona has no useful angle, omit only that persona's card; do not omit the whole batch when at least one card can help the producer.`;
 }
