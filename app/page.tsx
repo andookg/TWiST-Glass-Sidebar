@@ -524,6 +524,12 @@ export default function Home() {
   const transcriptWindow = useMemo(() => buildTranscriptWindow(transcriptTurns), [transcriptTurns]);
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("lowPower") === "1") {
+      document.documentElement.dataset.lowPower = "true";
+    }
+  }, []);
+
+  useEffect(() => {
     transcriptTurnsRef.current = transcriptTurns;
   }, [transcriptTurns]);
 

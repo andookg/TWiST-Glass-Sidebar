@@ -76,6 +76,7 @@
       ],
       "hardenedRuntime": true,
       "entitlements": "desktop/entitlements.mac.plist",
+      "entitlementsInherit": "desktop/entitlements.mac.plist",
       "extendInfo": {
         "NSMicrophoneUsageDescription": "TWiST Glass Sidebar listens to podcast or microphone audio for live transcription and AI sidebar cards.",
         "NSCameraUsageDescription": "TWiST Glass Sidebar can access camera/video sources if you choose to share them for capture.",

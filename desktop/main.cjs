@@ -23,6 +23,13 @@ let nextServer = null;
 
 app.setName("TWiST Glass Sidebar");
 
+function getDesktopUrl() {
+  const url = new URL(APP_URL);
+  url.searchParams.set("desktop", "1");
+  url.searchParams.set("lowPower", "1");
+  return url.toString();
+}
+
 async function startNextServer() {
   if (await appUrlIsReady(700)) {
     return;
@@ -142,7 +149,6 @@ function safeOrigin(value) {
 async function createWindow() {
   configureDesktopDataPaths();
   await startNextServer();
-  await requestMacMediaPermissions();
   wireCapturePermissions();
 
   mainWindow = new BrowserWindow({
@@ -150,14 +156,27 @@ async function createWindow() {
     height: 960,
     minWidth: 1120,
     minHeight: 760,
+    show: false,
     title: "TWiST Glass Sidebar",
     backgroundColor: "#f2f4e5",
     trafficLightPosition: { x: 18, y: 18 },
     webPreferences: {
+      backgroundThrottling: true,
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
     }
+  });
+
+  const showWindow = () => {
+    if (mainWindow && !mainWindow.isVisible()) {
+      mainWindow.show();
+    }
+  };
+
+  mainWindow.once("ready-to-show", showWindow);
+  mainWindow.webContents.once("did-finish-load", () => {
+    setTimeout(showWindow, 80);
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -165,7 +184,11 @@ async function createWindow() {
     return { action: "deny" };
   });
 
-  await mainWindow.loadURL(APP_URL);
+  await mainWindow.loadURL(getDesktopUrl());
+
+  requestMacMediaPermissions().catch((error) => {
+    console.error("Media permission request failed", error);
+  });
 }
 
 app.whenReady().then(createWindow).catch((error) => {
